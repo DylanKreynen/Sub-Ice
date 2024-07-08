@@ -74,9 +74,9 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     
     [min_val_upd, min_loc] = min(profile); 
     
-    % update v2: if min val is seriously smaller compared to previously
-    % found min val, we likely ended up in a crack > select the next local
-    % min loc instead! 
+    % update "anti-crack": if min val is seriously smaller compared to 
+    % previousl found min val, we likely ended up in a crack > select the 
+    % next local min loc instead! 
     if abs(min_val_upd - min_val) > min_diff_thr
         disp("Avoided a CRACK!")
         % we likely found a crack - select the next local min instead
@@ -95,6 +95,8 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
         end
     end
     min_val = min_val_upd; 
+    % another idea: when there's multiple local min candidates, chose the
+    % one that's closest to middle of sampling profile (?)
     
     % new centerline point is wherever sampled elevation profile is lowest: 
     xn = x_samp(min_loc); x_cent(i) = xn; 

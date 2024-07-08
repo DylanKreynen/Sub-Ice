@@ -7,8 +7,9 @@ addpath("./functions")
 %% Sub-Ice: DEM-based semi-automized mapping of ice shelf basal channels
 %  Algorithm that returns ice shelf basal channels' centerline, outlines
 %  and cross sectional profiles; based on surface expressions in a DEM. 
-%  A streamlined/slimmed down version "map_single_channel.m", now mapping
-%  multiple channels (or a single one, for that matter) from a single DEM. 
+%  This script maps one or more channels given a single DEM and user
+%  identified channel start and end points. (See "map_channel_timeseries.m"
+%  for mapping a single channel over different DEMs.)
 % 
 %  Input: 
 %   - DEM (GeoTIFF)
@@ -42,7 +43,7 @@ fig_subdir = 'fig\';
 shp_subdir = 'shp\'; 
 file_prefix = 'default_'; % (optional)
 % output path will be constructed as follows: 
-% results_dir\proj_subdir\fig- or shp_subdir\file_prefix_....ext
+% results_dir\proj_subdir\fig_subdir\file_prefix_....ext
 
 save_figs = 1;              % print figures to disk Y/N
 figs_filetype = '-dpng';    % for use with "print()"
@@ -74,18 +75,6 @@ no_prof_samp_pts = 50;            % number of sampling points on profile [-]
 slope_thr = 0.25;                 % [deg]
 
 
-%% read DEM from GeoTIFF
-%  and some basic manipulation
-
-[DEM, R] = readgeoraster(path_to_DEM);
-res = R.CellExtentInWorldX;     % resolution of DEM [m]
-
-% remove no data values, aid visualization
-% (update as required)
-DEM(DEM<-10) = NaN; % no data: -999
-DEM(DEM>50) = 50; 
-
-
 %% create output directories
 
 % figures
@@ -103,6 +92,18 @@ if save_shps == 1
         mkdir(shp_dir)
     end
 end
+
+
+%% read DEM from GeoTIFF
+%  and some basic manipulation
+
+[DEM, R] = readgeoraster(path_to_DEM);
+res = R.CellExtentInWorldX;     % resolution of DEM [m]
+
+% remove no data values, aid visualization
+% (update as required)
+DEM(DEM<-10) = NaN; % no data: -999
+DEM(DEM>50) = 50; 
 
 
 %% specify channel centerline start/end points
@@ -376,7 +377,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         
         figure(10)
         hold on
-        plot(norm_dist_vector*channel_length{c}/1000, nanmean(profiles{c}))
+        plot(norm_dist_vector*channel_length{c}/1000, mean(profiles{c}))
         
         trough_elev = min(profiles{c}); 
         trough_depth = min(profiles{c})-edge_elev{c}(:,1)'; 

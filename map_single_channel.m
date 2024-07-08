@@ -4,18 +4,21 @@ clc
 
 addpath("./functions")
 
-%% DEM-based semi-automized mapping of a single ice shelf basal channel
-%  Algorithm that returns an ice shelf basal channel's centerline, outlines
-%  and cross sectional profiles; based on it's surface expression in a DEM.
+%% Sub-Ice: DEM-based semi-automized mapping of ice shelf basal channels
+%  Algorithm that returns ice shelf basal channels' centerline, outlines
+%  and cross sectional profiles; based on surface expressions in a DEM. 
+%  This script maps a single channel over different DEMs, given user
+%  identiefied channel start and end points. (See "map_multi_channel.m" for
+%  mapping one or more channels given a single DEM.)
 % 
 %  Input: 
 %   - DEM (GeoTIFF)
 %   - channel start and end points (through GUI or read from shapefile)
 % 
 %  Output: 
-%   - channel centerline and outlines (figures and georeferenced shapefiles)
+%   - channel centerlines and outlines (figures and georeferenced shapefiles)
 %   - cross sectional elevation/depth profiles (figures)
-%   - channel depth and width along centerline (figures)
+%   - channel depth and width along centerlines (figures)
 % 
 %  (c) Dylan Kreynen
 %  University of Oslo

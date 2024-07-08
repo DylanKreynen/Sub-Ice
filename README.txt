@@ -16,8 +16,10 @@ See comments in code for details.
  
  
  Main scripts in this distribution: 
-  - map_single_channel.m
   - map_multi_channel.m
+    map one or more channels given a single DEM
+  - map_channel_timeseries.m
+    map single channel over different DEMs
   
  Directories in this distribution: 
   - ./functions

@@ -1,4 +1,5 @@
 function [x_samp, y_samp] = profile_query_pts(P_start, P_end, res, samp_step, no_samp_pts) 
+%[x_samp, y_samp] = profile_query_pts(P_start, P_end, res, samp_step, no_samp_pts) 
 %Returns a the coordinates of a sampling transect that is a certain
 %distance away from a starting point (in the direction of an end point),
 %perpendicular to that direction. 

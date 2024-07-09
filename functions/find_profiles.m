@@ -1,4 +1,5 @@
 function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, samp_step, no_samp_pts)
+%[profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, samp_step, no_samp_pts)
 %Returns channel cross sectional profiles along channel centerline. 
 % basic idea: 
 % - find midpoint between two centerline locations 

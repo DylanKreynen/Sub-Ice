@@ -56,23 +56,26 @@ start_end_method = 2;
 % 1 = click on start/end points
 % 2 = read from shapefile
 % 3 = manually enter in script
-path_to_start_end_shp = '.\input\venable_start_end_3.shp'; 
+path_to_start_end_shp = '.\input\venable_start_end_4.shp'; 
 % ^ only needed when start_end_method is set to "2" (read from shapefile)
 % important: only works if shapefile has same map projection as DEM! 
 
 % centerline search parameters
-search_step = 800;                % distance to step away from last known centerline point to construct search profile [m]
-no_cent_samp_pts = 20;            % number of sampling points on search profile [-]
+search_step = 1000;               % distance to step away from last known centerline point to construct search profile [m]
+no_cent_samp_pts = 25;            % number of sampling points on search profile [-]
 cent_samp_step = 100;             % distance between sampling points on search profile [m]
-max_no_cent_pts = 100;            % when to stop looking for centerline end point [-]
+max_no_cent_pts = 50;             % when to stop looking for centerline end point [-]
+crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, 
+                                  % pick next best point instead [m]
 
 % channel cross sectional profile parameters
 prof_samp_step = 100;             % sdistance between sampling points on profile [m]
 no_prof_samp_pts = 50;            % number of sampling points on profile [-]
 % note: profile length ~ no_sampling_points*prof_samp_step
 
-% slope threshold for identifying channel edge
-slope_thr = 0.25;                 % [deg]
+% channel edge parameters
+slope_thr = 0.25;                 % slope threshold for identifying edge [deg]
+windowsz = 500;                   % window size for profile smoothing [m] (will be rounded up to [pix])
 
 
 %% read DEM from GeoTIFF
@@ -81,7 +84,7 @@ slope_thr = 0.25;                 % [deg]
 [DEM, R] = readgeoraster(path_to_DEM);
 res = R.CellExtentInWorldX;     % resolution of DEM [m]
 
-% remove no data (-999), aid visualization: 
+% remove no data (-9999), aid visualization: 
 DEM(DEM<-10) = NaN; 
 DEM(DEM>50) = 50; 
 
@@ -157,18 +160,12 @@ text(P_end(1) + text_offs, P_end(2) + text_offs, 'channel end', 'Color', 'm')
 % - step one search step in that direction
 % - construct perpendicular sampling vector at that point
 % - sample DEM (interpolate) to find elevation profile
-% - new centerline location is where profile reaches min
+% - find local min and select appropriate one as new centerline point
 % - repeat until channel end: step in upd dir, sample, find min
-% >> see "find_centerline" function
+% - return centerline coordinates and section lengths
 
-[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts);
-
-% % check "anticrack" version of "find_centerline" for a crack threshold
-% % > if new centerline point is significantly lower than last known
-% % centerline point, we likely found a crack > select next local min instead
-% crack_thr = 10; 
-% [x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
-
+% [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts);
+[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
 channel_length = sum(cent_length);      % in [pix]
 channel_length = channel_length*res;    % in [m]
 
@@ -207,11 +204,9 @@ end
 % now based on slope threshold, reached after reaching max slope
 % >> see "find edges" function
 
-% This scheme needs improving! Karen's idea: smooth the data using a mean
-% filter, before finding the max negative curvature (see e-mail 2024-07-02)
-% update "find_edges" function as required
-
-[edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof, prof_samp_step, slope_thr); 
+% [edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof, prof_samp_step, slope_thr); 
+windowsz = ceil(windowsz/res);  % from m to [pix]
+[edge_idx, edge_coord, edge_elev] = find_edges_filt(profiles, x_prof, y_prof, prof_samp_step, slope_thr, windowsz); 
 
 figure(1)
 scatter(edge_coord(:,1), edge_coord(:,2), 15, 'g', 'filled')    % left channel edge
@@ -268,8 +263,8 @@ if ext_figs == 1
         prof = profiles(:,i); 
 
         % replace values outside of channel edges to NaN
-        prof(1:edge_idx(i,1)) = NaN; 
-        prof(edge_idx(i,2):end) = NaN;
+        prof(1:edge_idx(i,2)) = NaN;
+        prof(edge_idx(i,1):end) = NaN; 
 
         % from absolute height to depth below left channel edge
         prof = prof - edge_elev(i,1); 

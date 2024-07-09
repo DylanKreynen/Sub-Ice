@@ -1,4 +1,5 @@
 function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts)
+%[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts)
 %Returns the coordinates of the channel centerline. 
 % basic idea: 
 % - find direction (based on start/end points or previous centerline points)
@@ -10,8 +11,8 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % - return centerline coordinates and section lengths
 %
 % input: 
-% P_start = vector containing x and y coordinates of start point [pix coord]
-% P_end = vector containing x and y coordinates of end point [pix coord]
+% P_start = vector containing x and y img coordinates of start point [pix]
+% P_end = vector containing x and y img coordinates of end point [pix]
 % DEM = elevation data array [m] (use readgeoraster to read a geotiff)
 % R = spatial referencing information for the array [-]
 % search_step = distance to step away from P_start to construct search profile [m]
@@ -56,12 +57,19 @@ profile = interp2(X, Y, DEM, x_samp, y_samp);
 x_cent = [x_start; x_samp(min_loc)]; 
 y_cent = [y_start; y_samp(min_loc)]; 
 
+% store section length: 
+cent_length(1) = sqrt((x_cent(1)-x_cent(2))^2 + (y_cent(1)-y_cent(2))^2); 
+
 % find the next centerline points (until close to end point)
 i = 2; 
 dist_to_end = stop_dist + 1; 
 while dist_to_end > stop_dist % give condition here (distance to end point)
     i = i + 1; 
-    
+    if i > max_no_cent_pts-1
+        disp("Warning: max. no. of centerline points reached, but did not reach channel end.")
+        break
+    end
+
     x1 = x_cent(i-2); y1 = y_cent(i-2);     % second most recent centerline point coords
     x2 = x_cent(i-1); y2 = y_cent(i-1);     % most recent centerline point coords
     
@@ -74,23 +82,17 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     yn = y_samp(min_loc); y_cent(i) = yn; 
     
     % store section length: 
-    cent_length(i-2) = sqrt((xn-x2)^2 + (yn-y2)^2); 
+    cent_length(i-1) = sqrt((xn-x2)^2 + (yn-y2)^2); 
     
     % compute distance to end point: 
     dist_to_end = sqrt((xn-x_end)^2 + (yn-y_end)^2); 
-    
-    if i > max_no_cent_pts-1 % -1 to accout for user specified end point
-        disp("Warning: max. no. of centerline points reached, but did not reach channel end.")
-        break
-    end
 end
 
 % add user specified end point to centerline: 
 x_cent(end+1) = x_end; 
 y_cent(end+1) = y_end; 
 
-% compute the last two section lengths: 
-cent_length(end+1) = sqrt((x_cent(end-2)-x_cent(end-1))^2 + (y_cent(end-2)-y_cent(end-1))^2);
+% compute and store last section lengths: 
 cent_length(end+1) = sqrt((x_cent(end-1)-x_cent(end))^2 + (y_cent(end-1)-y_cent(end))^2);
 
 end

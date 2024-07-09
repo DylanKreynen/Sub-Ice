@@ -1,10 +1,12 @@
-function [edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof, samp_step, slope_thr)
-%[edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof, samp_step, slope_thr)
+function [edge_idx, edge_coord, edge_elev] = find_edges_filt(profiles, x_prof, y_prof, samp_step, slope_thr, window)
+%[edge_idx, edge_coord, edge_elev] = find_edges_filt(profiles, x_prof, y_prof, samp_step, slope_thr, window)
 %Returns indices of channel cross sectional profiles that correspond with
 %the channel's outer edges. Right now this is based on a slope threshold:
 %returns the first indices where a slope threshold is met, áfter reaching 
 %maximum slope. Right and left channel edges correspond to right and left 
 %of channel centerline, looking downstream (from channel start to end). 
+%Updated version of find_edges(), which smoothes the elevation profile
+%using a mean filter before attempting to find the edges. 
 %
 % input: 
 % profiles = matrix containing profiles' sampled elevation [m]
@@ -12,6 +14,7 @@ function [edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof
 % y_prof = matrix containing profiles' y coordinates [pix]
 % samp_step = distance between sampling points on profile [m]
 % slope_thr = slope threshold for identifying channel edge [deg]
+% window = window size for profile smoothing [pix]
 %
 % output: 
 % edge_idx = matrix containing profile indices corr. to channel edges [-]
@@ -41,13 +44,16 @@ lelev = NaN(no_profs, 1);       % channel elevation at left edge of profile [m]
 rx = NaN(no_profs, 1);          % right edge x coord [pix]
 ry = NaN(no_profs, 1);          % right edge y coord [pix]
 relev = NaN(no_profs, 1);       % channel elevatoin at right edge of profile [m]
-% left/right is correct when looking from START to END
+% left/right is correct when looking from END to START
 
 for i = 1:no_profs
     
     prof = profiles(:,i); 
     x_pr = x_prof(:,i); 
     y_pr = y_prof(:,i); 
+
+    % smooth profile using mean filter
+    prof = smoothdata(prof, 'movmean', window); 
     
     slope = gradient(prof, samp_step);  % slope in [rad]
     slope = abs(rad2deg(slope));        % now abs and in [deg]

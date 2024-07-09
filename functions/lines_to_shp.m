@@ -1,4 +1,5 @@
 function [] = lines_to_shp(x, y, R, field, value, path)
+%[] = lines_to_shp(x, y, R, field, value, path)
 %Takes a lines (x and y in image coordinates [pix]) and writes it to a
 %georeferenced shapefile for use in e.g. QGIS or ArcGIS. 
 %

@@ -1,13 +1,14 @@
 function [x_samp, y_samp] = perp_search_sampling(x_start, y_start, x_end, y_end, res, search_step, sampling_step, no_sampling_pts, first_after_start)
+%[x_samp, y_samp] = perp_search_sampling(x_start, y_start, x_end, y_end, res, search_step, sampling_step, no_sampling_pts, first_after_start)
 %Returns the coordinates of a sampling transect that is a certain
 %distance away from a starting point (in the direction of an end point),
 %perpendicular to that direction. 
 %
 % input: 
-% x_start = x coordinate start point [pix coord]
-% y_start = y coordinate start point [pix coord]
-% x_end = x coordinate end point [pix coord]
-% y_end = y coordinate end point [pix coord]
+% x_start = x img coordinate start point [pix]
+% y_start = y img coordinate start point [pix]
+% x_end = x img coordinate end point [pix]
+% y_end = y img coordinate end point [pix]
 % res = image resolution [m/pixel]
 % search_step = distance to step away from P_start to construct search profile [m]
 % sampling_step = distance between sampling points on search profile [m]

@@ -64,18 +64,21 @@ path_to_start_end_shp = '.\input\venable_start_end_timeseries.shp';
 % important: only works if shapefile has same map projection as DEM! 
 
 % centerline search parameters
-search_step = 800;                % distance to step away from last known centerline point to construct search profile [m]
-no_cent_samp_pts = 20;            % number of sampling points on search profile [-]
+search_step = 1000;               % distance to step away from last known centerline point to construct search profile [m]
+no_cent_samp_pts = 25;            % number of sampling points on search profile [-]
 cent_samp_step = 100;             % distance between sampling points on search profile [m]
-max_no_cent_pts = 100;            % when to stop looking for centerline end point [-]
+max_no_cent_pts = 50;             % when to stop looking for centerline end point [-]
+crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, 
+                                  % pick next best point instead [m]
 
 % channel cross sectional profile parameters
-prof_samp_step = 100;             % sdistance between sampling points on profile [m]
-no_prof_samp_pts = 50;            % number of sampling points on profile [-]
+prof_samp_step = 50;              % sdistance between sampling points on profile [m]
+no_prof_samp_pts = 100;           % number of sampling points on profile [-]
 % note: profile length ~ no_sampling_points*prof_samp_step
 
-% slope threshold for identifying channel edge
-slope_thr = 0.25;                 % [deg]
+% channel edge parameters
+slope_thr = 0.25;                 % slope threshold for identifying edge [deg]
+windowsz = 200;                   % window size for profile smoothing [m] (will be rounded up to [pix])
 
 
 %% create output directories
@@ -131,7 +134,7 @@ if start_end_method == 1
     
     for t = 1:no_DEMs    
         DEM = readgeoraster(append(path_to_DEMs, DEM_files{t})); 
-        DEM(DEM<-10) = NaN;  % remove no data (-999), 
+        DEM(DEM<-10) = NaN;  % remove no data (-9999), 
         DEM(DEM>50) = 50;    % and aid vizualisation
     
         figure(1)
@@ -215,18 +218,20 @@ for t = 1:no_DEMs
     DEM(DEM>50) = 50;    % and aid vizualisation (update as required)
     
     % find channel centerline and centerline length
-    [x_cent{t}, y_cent{t}, cent_length] = find_centerline(P_start(t,:), P_end(t,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts);
-    % crack_thr = 10; 
-    % [x_cent{c}, y_cent{c}, cent_length] = find_centerline_anticrack(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
-    channel_length{t} = sum(cent_length);      % in [pix]
-    channel_length{t} = channel_length{t}*res;    % in [m]
+    % [x_cent{t}, y_cent{t}, cent_length] = find_centerline(P_start(t,:), P_end(t,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts);
+    [x_cent{t}, y_cent{t}, cent_length] = find_centerline_anticrack(P_start(t,:), P_end(t,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
+    
+    channel_length{t} = sum(cent_length);       % in [pix]
+    channel_length{t} = channel_length{t}*res;  % in [m]
 
     % find cross sectional profiles
     [profiles{t}, x_prof{t}, y_prof{t}] = find_profiles(x_cent{t}, y_cent{t}, DEM, R, prof_samp_step, no_prof_samp_pts); 
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines
-    [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges(profiles{t}, x_prof{t}, y_prof{t}, prof_samp_step, slope_thr); 
+    % [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges(profiles{t}, x_prof{t}, y_prof{t}, prof_samp_step, slope_thr); 
+    windowsz = ceil(windowsz/res);  % from m to [pix]
+    [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges_filt(profiles{t}, x_prof{t}, y_prof{t}, prof_samp_step, slope_thr, windowsz); 
     
     % label for shapefile
     fchannel{t} = string(dates(t)); 
@@ -267,10 +272,11 @@ disp("Finished mapping all timesteps! ")
 
 %% write shapefiles
 
-disp("Writing shapefiles... ")
-
 % write mapped geometries to shapefile
 if save_shps == 1
+
+    disp("Writing shapefiles... ")
+
     % all centerlines in a single file
     fn = append(shp_dir, file_prefix, 'all_centerlines'); 
     lines_to_shp(x_cent, y_cent, R, 'channel_label', fchannel, fn); 
@@ -341,8 +347,8 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
             prof = profiles{t}(:,i); 
 
             % replace values outside of channel edges to NaN
-            prof(1:edge_idx{t}(i,1)) = NaN; 
-            prof(edge_idx{t}(i,2):end) = NaN;
+            prof(1:edge_idx{t}(i,2)) = NaN;
+            prof(edge_idx{t}(i,1):end) = NaN; 
 
             % from absolute height to depth below left channel edge
             prof = prof - edge_elev{t}(i,1); 

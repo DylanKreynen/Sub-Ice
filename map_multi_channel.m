@@ -56,23 +56,26 @@ start_end_method = 2;
 % 1 = click on start/end points
 % 2 = read from shapefile
 % 3 = manually enter in script
-path_to_start_end_shp = '.\input\venable_start_end_3.shp'; 
+path_to_start_end_shp = '.\input\venable_start_end_4.shp'; 
 % ^ only needed when start_end_method is set to "2" (read from shapefile)
 % important: only works if shapefile has same map projection as DEM! 
 
 % centerline search parameters
-search_step = 800;                % distance to step away from last known centerline point to construct search profile [m]
-no_cent_samp_pts = 20;            % number of sampling points on search profile [-]
+search_step = 1000;               % distance to step away from last known centerline point to construct search profile [m]
+no_cent_samp_pts = 25;            % number of sampling points on search profile [-]
 cent_samp_step = 100;             % distance between sampling points on search profile [m]
-max_no_cent_pts = 100;            % when to stop looking for centerline end point [-]
+max_no_cent_pts = 50;             % when to stop looking for centerline end point [-]
+crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, 
+                                  % pick next best point instead [m]
 
 % channel cross sectional profile parameters
 prof_samp_step = 100;             % sdistance between sampling points on profile [m]
 no_prof_samp_pts = 50;            % number of sampling points on profile [-]
 % note: profile length ~ no_sampling_points*prof_samp_step
 
-% slope threshold for identifying channel edge
-slope_thr = 0.25;                 % [deg]
+% channel edge parameters
+slope_thr = 0.25;                 % slope threshold for identifying edge [deg]
+windowsz = 500;                   % window size for profile smoothing [m] (will be rounded up to [pix])
 
 
 %% create output directories
@@ -102,7 +105,7 @@ res = R.CellExtentInWorldX;     % resolution of DEM [m]
 
 % remove no data values, aid visualization
 % (update as required)
-DEM(DEM<-10) = NaN; % no data: -999
+DEM(DEM<-10) = NaN; % no data: -9999
 DEM(DEM>50) = 50; 
 
 
@@ -135,7 +138,7 @@ if start_end_method == 1
             break
         end
         scatter(P_start(c,1), P_start(c,2), 'm', 'filled')
-        text(P_start(c,1) + text_offs, P_start(c,2) + text_offs, 'channel start', 'Color', 'm')        
+        text(P_start(c,1) + text_offs, P_start(c,2) + text_offs, 'start', 'Color', 'm')        
         
         % end point
         [P_end(c,1), P_end(c,2), button] = ginput(1); 
@@ -145,7 +148,7 @@ if start_end_method == 1
             P_end = P_end(1:c, :);
             break
         end
-        text(P_end(c,1) + text_offs, P_end(c,2) + text_offs, 'channel end', 'Color', 'm')
+        text(P_end(c,1) + text_offs, P_end(c,2) + text_offs, 'end', 'Color', 'm')
         scatter(P_end(c,1), P_end(c,2), 'm', 'filled')
     end
     
@@ -176,8 +179,8 @@ elseif start_end_method == 2
 
     scatter(P_start(:,1), P_start(:,2), 'm', 'filled')
     scatter(P_end(:,1), P_end(:,2), 'm', 'filled')
-    text(P_start(1) + text_offs, P_start(2) + text_offs, 'channel start', 'Color', 'm')
-    text(P_end(1) + text_offs, P_end(2) + text_offs, 'channel end', 'Color', 'm')
+    text(P_start(:,1) + text_offs, P_start(:,2) + text_offs, 'start', 'Color', 'm')
+    text(P_end(:,1) + text_offs, P_end(:,2) + text_offs, 'end', 'Color', 'm')
 
     no_channels = size(P_start, 1); 
     disp(append("Found ", string(no_channels), " channels' start and end points in shapefile. "))
@@ -191,10 +194,10 @@ elseif start_end_method == 3
     % enter start/end points manually below
     P_start = [353, 128];    % x, y in image coord [pix]
     P_end = [260, 84];       % x, y in image coord [pix]
-    scatter(P_start(1), P_start(2), 'm', 'filled')
-    scatter(P_end(1), P_end(2), 'm', 'filled')
-    text(P_start(1) + text_offs, P_start(2) + text_offs, 'channel start', 'Color', 'm')
-    text(P_end(1) + text_offs, P_end(2) + text_offs, 'channel end', 'Color', 'm')
+    scatter(P_start(:,1), P_start(:,2), 'm', 'filled')
+    scatter(P_end(:,1), P_end(:,2), 'm', 'filled')
+    text(P_start(:,1) + text_offs, P_start(:,2) + text_offs, 'start', 'Color', 'm')
+    text(P_end(:,1) + text_offs, P_end(:,2) + text_offs, 'end', 'Color', 'm')
     
 else
     error('Specify a valid method to enter channel start/end points (under "user specifiable variables"). ')
@@ -230,18 +233,19 @@ for c = 1:no_channels
     disp(append("Start mapping channel geometry of ", channel_label(c), ". "))
     
     % find channel centerline and centerline length
-    [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts);
-    % crack_thr = 10; 
-    % [x_cent{c}, y_cent{c}, cent_length] = find_centerline_anticrack(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
-    channel_length{c} = sum(cent_length);      % in [pix]
-    channel_length{c} = channel_length{c}*res;    % in [m]
+    % [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts);
+    [x_cent{c}, y_cent{c}, cent_length] = find_centerline_anticrack(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
+    channel_length{c} = sum(cent_length);       % in [pix]
+    channel_length{c} = channel_length{c}*res;  % in [m]
 
     % find cross sectional profiles
     [profiles{c}, x_prof{c}, y_prof{c}] = find_profiles(x_cent{c}, y_cent{c}, DEM, R, prof_samp_step, no_prof_samp_pts); 
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines
-    [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, prof_samp_step, slope_thr); 
+    % [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, prof_samp_step, slope_thr); 
+    windowsz = ceil(windowsz/res);  % from m to [pix]
+    [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges_filt(profiles{c}, x_prof{c}, y_prof{c}, prof_samp_step, slope_thr, windowsz); 
     
     % vizualise
     % centerlines
@@ -268,47 +272,50 @@ disp("Finished mapping all channels! ")
 
 %% write to files
 
-disp("Writing figure- and shapefiles... ")
+if save_figs == 1 | save_shps == 1
+    disp("Writing figure- and shapefiles... ")
 
-% print overview figure to file
-if save_figs == 1
-    %f.WindowState = 'maximized'; % make figure fullscreen before saving
-    fn = append(fig_dir, file_prefix, 'mapped_channels'); 
-    print(fn, figs_filetype, figs_resolution)
-    %f.WindowState = 'normal'; 
-end
-
-% write mapped geometries to shapefile
-if save_shps == 1
-    % all centerlines in a single file
-    fn = append(shp_dir, file_prefix, 'all_centerlines'); 
-    lines_to_shp(x_cent, y_cent, R, 'channel_label', fchannel, fn); 
-    
-    % centerlines and outlines in one file per channel
-    for c = 1:no_channels
-        outlines_x = cell(3, 1); 
-        outlines_y = cell(3, 1); 
-        outlines_x{1} = x_cent{c};            % centerline
-        outlines_y{1} = y_cent{c}; 
-        outlines_x{2} = edge_coord{c}(:,1);   % left edge
-        outlines_y{2} = edge_coord{c}(:,2); 
-        outlines_x{3} = edge_coord{c}(:,3);   % right edge
-        outlines_y{3} = edge_coord{c}(:,4); 
-        fline = {"centerline", "left_edge", "right_edge"}; 
-        fn = append(shp_dir, file_prefix, channel_label(c), "_outlines"); 
-        lines_to_shp(outlines_x, outlines_y, R, 'line_type', fline, fn);
+    % print overview figure to file
+    if save_figs == 1
+        %f.WindowState = 'maximized'; % make figure fullscreen before saving
+        fn = append(fig_dir, file_prefix, 'mapped_channels'); 
+        print(fn, figs_filetype, figs_resolution)
+        %f.WindowState = 'normal'; 
     end
     
-    % all profile transects in one file per channel
-    for c = 1:no_channels
-        no_profiles = size(x_prof{c}, 2); 
-        fprof = 1:no_profiles;  
-        fn = append(shp_dir, file_prefix, channel_label(c), "_profiles"); 
-        lines_to_shp(x_prof{c}, y_prof{c}, R, 'prof_no', fprof, fn);
-    end 
-end
+    % write mapped geometries to shapefile
+    if save_shps == 1
+    
+        % all centerlines in a single file
+        fn = append(shp_dir, file_prefix, 'all_centerlines'); 
+        lines_to_shp(x_cent, y_cent, R, 'channel_label', fchannel, fn); 
+        
+        % centerlines and outlines in one file per channel
+        for c = 1:no_channels
+            outlines_x = cell(3, 1); 
+            outlines_y = cell(3, 1); 
+            outlines_x{1} = x_cent{c};            % centerline
+            outlines_y{1} = y_cent{c}; 
+            outlines_x{2} = edge_coord{c}(:,1);   % left edge
+            outlines_y{2} = edge_coord{c}(:,2); 
+            outlines_x{3} = edge_coord{c}(:,3);   % right edge
+            outlines_y{3} = edge_coord{c}(:,4); 
+            fline = {"centerline", "left_edge", "right_edge"}; 
+            fn = append(shp_dir, file_prefix, channel_label(c), "_outlines"); 
+            lines_to_shp(outlines_x, outlines_y, R, 'line_type', fline, fn);
+        end
+        
+        % all profile transects in one file per channel
+        for c = 1:no_channels
+            no_profiles = size(x_prof{c}, 2); 
+            fprof = 1:no_profiles;  
+            fn = append(shp_dir, file_prefix, channel_label(c), "_profiles"); 
+            lines_to_shp(x_prof{c}, y_prof{c}, R, 'prof_no', fprof, fn);
+        end 
+    end
 
-disp(append("Done writing files. Check '", append(results_dir, proj_subdir), "' for output. "))
+    disp(append("Done writing files. Check '", append(results_dir, proj_subdir), "' for output. "))
+end
 
 
 %% extended figures
@@ -350,8 +357,8 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
             prof = profiles{c}(:,i); 
 
             % replace values outside of channel edges to NaN
-            prof(1:edge_idx{c}(i,1)) = NaN; 
-            prof(edge_idx{c}(i,2):end) = NaN;
+            prof(1:edge_idx{c}(i,2)) = NaN;
+            prof(edge_idx{c}(i,1):end) = NaN; 
 
             % from absolute height to depth below left channel edge
             prof = prof - edge_elev{c}(i,1); 

@@ -105,7 +105,7 @@ res = R.CellExtentInWorldX;     % resolution of DEM [m]
 
 % remove no data values, aid visualization
 % (update as required)
-DEM(DEM<-10) = NaN; % no data: -9999
+DEM(DEM<-15) = NaN; % no data: -9999
 DEM(DEM>50) = 50; 
 
 

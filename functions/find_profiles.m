@@ -31,6 +31,7 @@ y = 1:size(DEM, 2);
 [X, Y] = meshgrid(y, x); 
 
 % for storing profiles and coords: 
+no_samp_pts = 2*(ceil(no_samp_pts/2)); 
 profiles = NaN(no_samp_pts+1, length(x_cent)-1);
 x_prof = NaN(no_samp_pts+1, length(x_cent)-1);
 y_prof = NaN(no_samp_pts+1, length(x_cent)-1);

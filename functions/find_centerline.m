@@ -1,24 +1,28 @@
-function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts)
-%[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts)
+function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts, min_diff_thr)
+%[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts, min_diff_thr)
 %Returns the coordinates of the channel centerline. 
 % basic idea: 
 % - find direction (based on start/end points or previous centerline points)
 % - step one search step in that direction
 % - construct perpendicular sampling vector at that point
 % - sample DEM (interpolate) to find elevation profile
-% - new centerline location is where profile reaches min
+% - find local min and select appropriate one as new centerline point
 % - repeat until channel end: step in upd dir, sample, find min
 % - return centerline coordinates and section lengths
 %
 % input: 
 % P_start = vector containing x and y img coordinates of start point [pix]
-% P_end = vector containing x and y img coordinates of end point [pix]
+% P_end = vector containing x and y ing coordinates of end point [pix]
 % DEM = elevation data array [m] (use readgeoraster to read a geotiff)
 % R = spatial referencing information for the array [-]
 % search_step = distance to step away from P_start to construct search profile [m]
 % samp_step = distance between sampling points on search profile [m]
 % no_samp_pts = number of sampling points on search profile [-]
 % max_no_cent_pts = when to stop looking for centerline end point [-]
+% min_diff_thr = if new centerline location has an elevation value that's 
+%                significantly different from the previously known 
+%                centerline location (determined by threshold in [m]), we
+%                likely found a crack and select the next local min instead
 %
 % output: 
 % x_cent = vector with x coordinates of channel centerline [pix]
@@ -28,11 +32,6 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % (c) Dylan Kreynen
 % University of Oslo
 % June - July 2024
-
-x_start = P_start(1); 
-y_start = P_start(2); 
-x_end = P_end(1); 
-y_end = P_end(2); 
 
 res = R.CellExtentInWorldX; % resolution of DEM [m/pix]
 x = 1:size(DEM, 1); 
@@ -45,22 +44,30 @@ stop_dist = stop_dist/res;  % now in [pix]
 % when we are less than a search step away from the end point, we have
 % reached our destination/centerline is considered complete
 
+% preallocate for speed: 
+x_cent = NaN(max_no_cent_pts, 1); 
+y_cent = NaN(max_no_cent_pts, 1);
+cent_length = NaN(max_no_cent_pts-1, 1); 
+
 % start searching; find first point after "start": 
 % construct sampling vector, one search step in the direction of channel end 
 [x_samp, y_samp] = centerline_query_pts(P_start, P_end, res, search_step, samp_step, no_samp_pts, 1); 
 % sample DEM at this sampling vector to get a profile
 profile = interp2(X, Y, DEM, x_samp, y_samp); 
 % find min of profile = new centerline location
-[~, min_loc] = min(profile);
+[min_val, min_loc] = min(profile);
 
 % add start and first point to centerline: 
-x_cent = [x_start; x_samp(min_loc)]; 
-y_cent = [y_start; y_samp(min_loc)]; 
+x_cent(1:2) = [P_start(1); x_samp(min_loc)]; 
+y_cent(1:2) = [P_start(2); y_samp(min_loc)]; 
 
 % store section length: 
 cent_length(1) = sqrt((x_cent(1)-x_cent(2))^2 + (y_cent(1)-y_cent(2))^2); 
 
 % find the next centerline points (until close to end point)
+no_pts = ceil(no_samp_pts/2);
+middle_weights = [1:no_pts, no_pts+1, abs(-no_pts:-1)]; 
+% ^ vector with weights - higher closer to middle of profile
 i = 2; 
 dist_to_end = stop_dist + 1; 
 while dist_to_end > stop_dist % give condition here (distance to end point)
@@ -70,30 +77,75 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
         break
     end
 
-    x1 = x_cent(i-2); y1 = y_cent(i-2);     % second most recent centerline point coords
-    x2 = x_cent(i-1); y2 = y_cent(i-1);     % most recent centerline point coords
-    
-    [x_samp, y_samp] = perp_search_sampling(x1, y1, x2, y2, res, search_step, samp_step, no_samp_pts, 0);
+    [x_samp, y_samp] = perp_search_sampling(x_cent(i-2), y_cent(i-2), x_cent(i-1), y_cent(i-1), res, search_step, samp_step, no_samp_pts, 0);
     profile = interp2(X, Y, DEM, x_samp, y_samp); 
-    [~, min_loc] = min(profile);
     
-    % new centerline point is wherever sampled elevation profile is lowest: 
-    xn = x_samp(min_loc); x_cent(i) = xn; 
-    yn = y_samp(min_loc); y_cent(i) = yn; 
+    % update "anti-crack": rather than find the absolute min of the profile,
+    % we find all local min. then select the appropriate one
+    %  - local min which best preserves centerline direction, 
+    %  - whose elev diff wrt prev centerline point does not exceed threshold
+    % if no appropriate local min can be found we preserve direction from
+    % previous centerline section
+
+    % another idea: basal channels tend to be smooth, cracks sharp
+    % can we use that to distinguish between the channel and a crack? 
+    % e.g. make cross sectional profiles on the go and compare slopes
+
+    % one more idea: rather than step in the direction of the last
+    % centerline section, we could step in the mean direction of the last x
+    % number of centerline sections (less likely to get stuck in a crack?)
+
+    % find all local min on profile
+    local_min_loc = islocalmin(profile); % logical
+
+    while any(local_min_loc)   % while we have valid local minima
+        % select local min closest to center of search profile
+        local_min_loc = local_min_loc.*middle_weights; 
+        [~, min_loc] = max(local_min_loc); 
+        min_val_upd = profile(min_loc); 
+
+        % check for depth wrt previous centerline point threshold
+        if (min_val - min_val_upd) > min_diff_thr
+            % disp(append("Avoided a CRACK! Cent. idx. ", string(i-1)))
+            % remove local min from list and try again
+            local_min_loc(min_loc) = 0; 
+        else
+            % we found an appropriate local min
+            % break out of while loop
+            break
+        end
+    end
+
+    if ~any(local_min_loc)
+        % no local min on profile that satisfies conditions
+        % > stick to direction from previous section
+        min_loc = no_pts+1; % center of profile
+        min_val_upd = profile(min_loc); 
+    end
+
+    min_val = min_val_upd; 
+
+    % new centerline point: 
+    x_cent(i) = x_samp(min_loc); 
+    y_cent(i) = y_samp(min_loc); 
     
     % store section length: 
-    cent_length(i-1) = sqrt((xn-x2)^2 + (yn-y2)^2); 
+    cent_length(i-1) = sqrt((x_cent(i)-x_cent(i-1))^2 + (y_cent(i)-y_cent(i-1))^2); 
     
     % compute distance to end point: 
-    dist_to_end = sqrt((xn-x_end)^2 + (yn-y_end)^2); 
+    dist_to_end = sqrt((x_cent(i)-P_end(1))^2 + (y_cent(i)-P_end(2))^2); 
 end
 
 % add user specified end point to centerline: 
-x_cent(end+1) = x_end; 
-y_cent(end+1) = y_end; 
+x_cent(i+1) = P_end(1); 
+y_cent(i+1) = P_end(2); 
 
 % compute and store last section lengths: 
-cent_length(end+1) = sqrt((x_cent(end-1)-x_cent(end))^2 + (y_cent(end-1)-y_cent(end))^2);
+cent_length(i) = sqrt((x_cent(end-1)-x_cent(end))^2 + (y_cent(end-1)-y_cent(end))^2);
+
+% strip of unnecessary NaNs: 
+x_cent = x_cent(1:i+1);
+y_cent = y_cent(1:i+1); 
+cent_length = cent_length(1:i); 
 
 end
-

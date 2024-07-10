@@ -164,8 +164,7 @@ text(P_end(1) + text_offs, P_end(2) + text_offs, 'channel end', 'Color', 'm')
 % - repeat until channel end: step in upd dir, sample, find min
 % - return centerline coordinates and section lengths
 
-% [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts);
-[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
+[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
 channel_length = sum(cent_length);      % in [pix]
 channel_length = channel_length*res;    % in [m]
 

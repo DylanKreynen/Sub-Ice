@@ -218,8 +218,7 @@ for t = 1:no_DEMs
     DEM(DEM>50) = 50;    % and aid vizualisation (update as required)
     
     % find channel centerline and centerline length
-    % [x_cent{t}, y_cent{t}, cent_length] = find_centerline(P_start(t,:), P_end(t,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts);
-    [x_cent{t}, y_cent{t}, cent_length] = find_centerline_anticrack(P_start(t,:), P_end(t,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
+    [x_cent{t}, y_cent{t}, cent_length] = find_centerline(P_start(t,:), P_end(t,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
     
     channel_length{t} = sum(cent_length);       % in [pix]
     channel_length{t} = channel_length{t}*res;  % in [m]

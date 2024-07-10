@@ -233,8 +233,7 @@ for c = 1:no_channels
     disp(append("Start mapping channel geometry of ", channel_label(c), ". "))
     
     % find channel centerline and centerline length
-    % [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts);
-    [x_cent{c}, y_cent{c}, cent_length] = find_centerline_anticrack(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
+    [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
     channel_length{c} = sum(cent_length);       % in [pix]
     channel_length{c} = channel_length{c}*res;  % in [m]
 

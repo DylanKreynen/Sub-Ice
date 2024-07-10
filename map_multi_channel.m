@@ -45,11 +45,11 @@ file_prefix = 'default_'; % (optional)
 % output path will be constructed as follows: 
 % results_dir\proj_subdir\fig_subdir\file_prefix_....ext
 
-save_figs = 1;              % print figures to disk Y/N
+save_figs = 0;              % print figures to disk Y/N
 figs_filetype = '-dpng';    % for use with "print()"
 figs_resolution = '-r500';  % for use with "print()"
-ext_figs = 1;               % plot (and print) extended figures Y/N
-save_shps = 1;              % save output as shapefiles Y/N
+ext_figs = 0;               % plot (and print) extended figures Y/N
+save_shps = 0;              % save output as shapefiles Y/N
 
 % select method to specify channel start/end points
 start_end_method = 2;

@@ -1,0 +1,12 @@
+REMA - The Reference Elevation Model of Antarctica
+venable.tif contains a clipped version of the 200m mosaic
+
+More info: 
+https://www.pgc.umn.edu/data/rema/
+
+Reference: 
+Howat, Ian, et al., 2022, “The Reference Elevation Model of Antarctica – Mosaics, Version 2”, https://doi.org/10.7910/DVN/EBW8UC, Harvard Dataverse, V1, [June 2024].
+
+License (for venable.tif only):
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/

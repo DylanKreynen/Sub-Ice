@@ -1,4 +1,4 @@
-clear all
+open clear all
 close all
 clc
 
@@ -65,8 +65,8 @@ search_step = 1000;               % distance to step away from last known center
 no_cent_samp_pts = 25;            % number of sampling points on search profile [-]
 cent_samp_step = 100;             % distance between sampling points on search profile [m]
 max_no_cent_pts = 50;             % when to stop looking for centerline end point [-]
-crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, 
-                                  % pick next best point instead [m]
+crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, pick next best point instead [m]
+window_cent = 0;                  % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 
 % channel cross sectional profile parameters
 prof_samp_step = 100;             % sdistance between sampling points on profile [m]
@@ -75,7 +75,7 @@ no_prof_samp_pts = 50;            % number of sampling points on profile [-]
 
 % channel edge parameters
 slope_thr = 0.25;                 % slope threshold for identifying edge [deg]
-windowsz = 500;                   % window size for profile smoothing [m] (will be rounded up to [pix])
+window_edge = 500;                % window size for profile smoothing [m] (will be rounded up to [pix])
 
 
 %% read DEM from GeoTIFF
@@ -164,7 +164,8 @@ text(P_end(1) + text_offs, P_end(2) + text_offs, 'channel end', 'Color', 'm')
 % - repeat until channel end: step in upd dir, sample, find min
 % - return centerline coordinates and section lengths
 
-[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
+window_cent = ceil(window_cent/res);    % from m to [pix]
+[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr, window_cent);
 channel_length = sum(cent_length);      % in [pix]
 channel_length = channel_length*res;    % in [m]
 
@@ -203,9 +204,8 @@ end
 % now based on slope threshold, reached after reaching max slope
 % >> see "find edges" function
 
-% [edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof, prof_samp_step, slope_thr); 
-windowsz = ceil(windowsz/res);  % from m to [pix]
-[edge_idx, edge_coord, edge_elev] = find_edges_filt(profiles, x_prof, y_prof, prof_samp_step, slope_thr, windowsz); 
+window_edge = ceil(window_edge/res);  % from m to [pix]
+[edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof, prof_samp_step, slope_thr, window_edge); 
 
 figure(1)
 scatter(edge_coord(:,1), edge_coord(:,2), 15, 'g', 'filled')    % left channel edge

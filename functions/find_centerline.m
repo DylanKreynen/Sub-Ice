@@ -1,5 +1,5 @@
-function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts, min_diff_thr)
-%[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts, min_diff_thr)
+function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts, min_diff_thr, window)
+%[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts, min_diff_thr, window)
 %Returns the coordinates of the channel centerline. 
 % basic idea: 
 % - find direction (based on start/end points or previous centerline points)
@@ -23,6 +23,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 %                significantly different from the previously known 
 %                centerline location (determined by threshold in [m]), we
 %                likely found a crack and select the next local min instead
+% window = window size for search profile smoothing [pix] (set to 0 for no smoothing)
 %
 % output: 
 % x_cent = vector with x coordinates of channel centerline [pix]
@@ -54,6 +55,10 @@ cent_length = NaN(max_no_cent_pts-1, 1);
 [x_samp, y_samp] = centerline_query_pts(P_start, P_end, res, search_step, samp_step, no_samp_pts, 1); 
 % sample DEM at this sampling vector to get a profile
 profile = interp2(X, Y, DEM, x_samp, y_samp); 
+% smooth profile using mean filter
+if window ~= 0
+    prof = smoothdata(prof, 'movmean', window); 
+end
 % find min of profile = new centerline location
 [min_val, min_loc] = min(profile);
 
@@ -79,6 +84,10 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
 
     [x_samp, y_samp] = perp_search_sampling(x_cent(i-2), y_cent(i-2), x_cent(i-1), y_cent(i-1), res, search_step, samp_step, no_samp_pts, 0);
     profile = interp2(X, Y, DEM, x_samp, y_samp); 
+    % smooth profile using mean filter
+    if window ~= 0
+        prof = smoothdata(prof, 'movmean', window); 
+    end
     
     % update "anti-crack": rather than find the absolute min of the profile,
     % we find all local min. then select the appropriate one
@@ -91,9 +100,14 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     % can we use that to distinguish between the channel and a crack? 
     % e.g. make cross sectional profiles on the go and compare slopes
 
-    % one more idea: rather than step in the direction of the last
+    % another idea: rather than step in the direction of the last
     % centerline section, we could step in the mean direction of the last x
     % number of centerline sections (less likely to get stuck in a crack?)
+
+    % one more idea: we could sample a profile between the last known
+    % centerline point and the new potential centerline point. If it's
+    % indeed along the centerline we should not have big bumps in it. If
+    % it's a crack, there's likely "a big hill" on the profile
 
     % find all local min on profile
     local_min_loc = islocalmin(profile); % logical

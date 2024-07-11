@@ -34,7 +34,7 @@ addpath("./functions")
 %  (update as required)
 
 % path to DEM (should be GeoTIFF)
-path_to_DEM = '.\input\venable.tif'; 
+path_to_DEM = '..\REMA\venable_10m.tif'; 
 
 % output behaviour: 
 results_dir = '.\output\';
@@ -63,19 +63,20 @@ path_to_start_end_shp = '.\input\venable_start_end_4.shp';
 % centerline search parameters
 search_step = 1000;               % distance to step away from last known centerline point to construct search profile [m]
 no_cent_samp_pts = 25;            % number of sampling points on search profile [-]
-cent_samp_step = 100;             % distance between sampling points on search profile [m]
+cent_samp_step = 50;              % distance between sampling points on search profile [m]
 max_no_cent_pts = 50;             % when to stop looking for centerline end point [-]
-crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, 
-                                  % pick next best point instead [m]
+crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, pick next best point instead [m]
+window_cent = 0;                  % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 
 % channel cross sectional profile parameters
-prof_samp_step = 100;             % sdistance between sampling points on profile [m]
-no_prof_samp_pts = 50;            % number of sampling points on profile [-]
+prof_samp_step = 50;              % sdistance between sampling points on profile [m]
+no_prof_samp_pts = 100;           % number of sampling points on profile [-]
 % note: profile length ~ no_sampling_points*prof_samp_step
 
 % channel edge parameters
 slope_thr = 0.25;                 % slope threshold for identifying edge [deg]
-windowsz = 500;                   % window size for profile smoothing [m] (will be rounded up to [pix])
+window_edge = 500;                % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
+
 
 
 %% create output directories
@@ -233,7 +234,8 @@ for c = 1:no_channels
     disp(append("Start mapping channel geometry of ", channel_label(c), ". "))
     
     % find channel centerline and centerline length
-    [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
+    window_cent = ceil(window_cent/res);        % from m to [pix]
+    [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr, window_cent);
     channel_length{c} = sum(cent_length);       % in [pix]
     channel_length{c} = channel_length{c}*res;  % in [m]
 
@@ -242,9 +244,8 @@ for c = 1:no_channels
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines
-    % [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, prof_samp_step, slope_thr); 
-    windowsz = ceil(windowsz/res);  % from m to [pix]
-    [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges_filt(profiles{c}, x_prof{c}, y_prof{c}, prof_samp_step, slope_thr, windowsz); 
+    window_edge = ceil(window_edge/res);        % from m to [pix]
+    [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, prof_samp_step, slope_thr, window_edge); 
     
     % vizualise
     % centerlines

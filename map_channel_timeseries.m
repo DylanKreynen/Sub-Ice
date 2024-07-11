@@ -68,8 +68,8 @@ search_step = 1000;               % distance to step away from last known center
 no_cent_samp_pts = 25;            % number of sampling points on search profile [-]
 cent_samp_step = 100;             % distance between sampling points on search profile [m]
 max_no_cent_pts = 50;             % when to stop looking for centerline end point [-]
-crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, 
-                                  % pick next best point instead [m]
+crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, pick next best point instead [m]
+window_cent = 0;                  % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 
 % channel cross sectional profile parameters
 prof_samp_step = 50;              % sdistance between sampling points on profile [m]
@@ -78,7 +78,7 @@ no_prof_samp_pts = 100;           % number of sampling points on profile [-]
 
 % channel edge parameters
 slope_thr = 0.25;                 % slope threshold for identifying edge [deg]
-windowsz = 200;                   % window size for profile smoothing [m] (will be rounded up to [pix])
+window_edge = 200;                % window size for profile smoothing [m] (will be rounded up to [pix])
 
 
 %% create output directories
@@ -218,7 +218,8 @@ for t = 1:no_DEMs
     DEM(DEM>50) = 50;    % and aid vizualisation (update as required)
     
     % find channel centerline and centerline length
-    [x_cent{t}, y_cent{t}, cent_length] = find_centerline(P_start(t,:), P_end(t,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr);
+    window_cent = ceil(window_cent/res);        % from m to [pix]
+    [x_cent{t}, y_cent{t}, cent_length] = find_centerline(P_start(t,:), P_end(t,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr, window_cent);
     
     channel_length{t} = sum(cent_length);       % in [pix]
     channel_length{t} = channel_length{t}*res;  % in [m]
@@ -228,9 +229,8 @@ for t = 1:no_DEMs
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines
-    % [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges(profiles{t}, x_prof{t}, y_prof{t}, prof_samp_step, slope_thr); 
-    windowsz = ceil(windowsz/res);  % from m to [pix]
-    [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges_filt(profiles{t}, x_prof{t}, y_prof{t}, prof_samp_step, slope_thr, windowsz); 
+    window_edge = ceil(window_edge/res);        % from m to [pix]
+    [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges(profiles{t}, x_prof{t}, y_prof{t}, prof_samp_step, slope_thr, window_edge); 
     
     % label for shapefile
     fchannel{t} = string(dates(t)); 

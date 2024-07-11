@@ -1,4 +1,4 @@
-function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, samp_step, no_samp_pts)
+function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, varargin)
 %[profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, samp_step, no_samp_pts)
 %Returns channel cross sectional profiles along channel centerline. 
 % basic idea: 
@@ -8,13 +8,15 @@ function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, samp
 % - sample DEM (interpolate) to find elevation profile
 % - return profiles' coordinates and elevations
 %
-% input: 
+% required input: 
 % x_cent = vector with x coordinates of channel centerline [pix]
 % y_cent = vector with y coordinates of channel centerline [pix]
 % DEM = elevation data array [m] (use readgeoraster to read a geotiff)
 % R = spatial referencing information for the array [-]
-% samp_step = distance between sampling points on profile [m]
-% no_samp_pts = number of sampling points on profile [-]
+%
+% optional input: 
+% samp_step = distance between sampling points on profile [m] (default: 100m)
+% no_samp_pts = number of sampling points on profile [-] (default: 10)
 %
 % output: 
 % profiles = matrix containing profiles' sampled elevation [m]
@@ -24,6 +26,31 @@ function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, samp
 % (c) Dylan Kreynen
 % University of Oslo
 % June - July 2024
+
+%% inputParser
+
+% default parameter values
+default_samp_step = 100; 
+default_no_samp_pts =  10; 
+
+% parse input arguments
+p = inputParser; 
+validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
+validMapCellsRef = @(x) class(x) == "map.rasterref.MapCellsReference"; 
+validxycent = @(x) (size(x, 1)==1 | size(x, 2)==1) && isnumeric(x(1)) && isscalar(x(1)); 
+addRequired(p, 'x_cent', validxycent)
+addRequired(p, 'y_cent', validxycent)
+addRequired(p, 'DEM')
+addRequired(p, 'R', validMapCellsRef)
+addOptional(p, 'samp_step', default_samp_step, validScalarPosNum)
+addOptional(p, 'no_samp_pts', default_no_samp_pts, validScalarPosNum)
+parse(p, x_cent, y_cent, DEM, R, varargin{:}); 
+
+samp_step = p.Results.samp_step; 
+no_samp_pts = p.Results.no_samp_pts; 
+
+
+%% actual function
 
 res = R.CellExtentInWorldX; % resolution of DEM [m/pix]
 x = 1:size(DEM, 1); 

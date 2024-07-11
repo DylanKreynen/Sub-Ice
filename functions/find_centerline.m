@@ -1,4 +1,4 @@
-function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts, min_diff_thr, window)
+function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, varargin) 
 %[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts, min_diff_thr, window)
 %Returns the coordinates of the channel centerline. 
 % basic idea: 
@@ -10,22 +10,24 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % - repeat until channel end: step in upd dir, sample, find min
 % - return centerline coordinates and section lengths
 %
-% input: 
+% required input:
 % P_start = vector containing x and y img coordinates of start point [pix]
 % P_end = vector containing x and y ing coordinates of end point [pix]
 % DEM = elevation data array [m] (use readgeoraster to read a geotiff)
 % R = spatial referencing information for the array [-]
-% search_step = distance to step away from P_start to construct search profile [m]
-% samp_step = distance between sampling points on search profile [m]
-% no_samp_pts = number of sampling points on search profile [-]
-% max_no_cent_pts = when to stop looking for centerline end point [-]
+% 
+% optional input: 
+% search_step = distance to step away from P_start to construct search profile [m] (default: 1000m)
+% samp_step = distance between sampling points on search profile [m] (default: 100m)
+% no_samp_pts = number of sampling points on search profile [-] (default: 10)
+% max_no_cent_pts = when to stop looking for centerline end point [-] (default: 50m)
 % min_diff_thr = if new centerline location has an elevation value that's 
 %                significantly different from the previously known 
 %                centerline location (determined by threshold in [m]), we
-%                likely found a crack and select the next local min instead
-% window = window size for search profile smoothing [pix] (set to 0 for no smoothing)
+%                likely found a crack and select the next local min instead (default: 100m)
+% window = window size for search profile smoothing [pix], set to 0 for no smoothing (default)
 %
-% output: 
+% output:
 % x_cent = vector with x coordinates of channel centerline [pix]
 % y_cent = vector with y coordinates of channel centerline [pix]
 % cent_lengths = vector with centerline section lengths [pix]
@@ -33,6 +35,44 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % (c) Dylan Kreynen
 % University of Oslo
 % June - July 2024
+
+
+%% inputParser
+
+% default parameter values
+default_search_step = 1000; 
+default_samp_step = 100; 
+default_no_samp_pts =  10; 
+default_max_no_cent_pts = 50; 
+default_min_diff_thr = 100; 
+default_window = 0; 
+
+% parse input arguments
+p = inputParser; 
+validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
+validMapCellsRef = @(x) class(x) == "map.rasterref.MapCellsReference"; 
+validPStartEnd = @(x) (size(x, 1)==2 | size(x, 2)==2) && isnumeric(x(1)) && isscalar(x(1)); 
+addRequired(p, 'P_start', validPStartEnd)
+addRequired(p, 'P_end', validPStartEnd)
+addRequired(p, 'DEM')
+addRequired(p, 'R', validMapCellsRef)
+addOptional(p, 'search_step', default_search_step, validScalarPosNum)
+addOptional(p, 'samp_step', default_samp_step, validScalarPosNum)
+addOptional(p, 'no_samp_pts', default_no_samp_pts, validScalarPosNum)
+addOptional(p, 'max_no_cent_pts', default_max_no_cent_pts, validScalarPosNum)
+addOptional(p, 'min_diff_thr', default_min_diff_thr, validScalarPosNum)
+addOptional(p, 'window', default_window, validScalarPosNum)
+parse(p, P_start, P_end, DEM, R, varargin{:}); 
+
+search_step = p.Results.search_step; 
+samp_step = p.Results.samp_step; 
+no_samp_pts = p.Results.no_samp_pts; 
+max_no_cent_pts = p.Results.max_no_cent_pts; 
+min_diff_thr = p.Results.min_diff_thr; 
+window = p.Results.window; 
+
+
+%% actual function
 
 res = R.CellExtentInWorldX; % resolution of DEM [m/pix]
 x = 1:size(DEM, 1); 
@@ -54,13 +94,13 @@ cent_length = NaN(max_no_cent_pts-1, 1);
 % construct sampling vector, one search step in the direction of channel end 
 [x_samp, y_samp] = centerline_query_pts(P_start, P_end, res, search_step, samp_step, no_samp_pts, 1); 
 % sample DEM at this sampling vector to get a profile
-profile = interp2(X, Y, DEM, x_samp, y_samp); 
+prof = interp2(X, Y, DEM, x_samp, y_samp); 
 % smooth profile using mean filter
 if window ~= 0
     prof = smoothdata(prof, 'movmean', window); 
 end
 % find min of profile = new centerline location
-[min_val, min_loc] = min(profile);
+[min_val, min_loc] = min(prof);
 
 % add start and first point to centerline: 
 x_cent(1:2) = [P_start(1); x_samp(min_loc)]; 
@@ -83,7 +123,7 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     end
 
     [x_samp, y_samp] = perp_search_sampling(x_cent(i-2), y_cent(i-2), x_cent(i-1), y_cent(i-1), res, search_step, samp_step, no_samp_pts, 0);
-    profile = interp2(X, Y, DEM, x_samp, y_samp); 
+    prof = interp2(X, Y, DEM, x_samp, y_samp); 
     % smooth profile using mean filter
     if window ~= 0
         prof = smoothdata(prof, 'movmean', window); 
@@ -110,13 +150,13 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     % it's a crack, there's likely "a big hill" on the profile
 
     % find all local min on profile
-    local_min_loc = islocalmin(profile); % logical
+    local_min_loc = islocalmin(prof); % logical
 
     while any(local_min_loc)   % while we have valid local minima
         % select local min closest to center of search profile
         local_min_loc = local_min_loc.*middle_weights; 
         [~, min_loc] = max(local_min_loc); 
-        min_val_upd = profile(min_loc); 
+        min_val_upd = prof(min_loc); 
 
         % check for depth wrt previous centerline point threshold
         if (min_val - min_val_upd) > min_diff_thr
@@ -134,7 +174,7 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
         % no local min on profile that satisfies conditions
         % > stick to direction from previous section
         min_loc = no_pts+1; % center of profile
-        min_val_upd = profile(min_loc); 
+        min_val_upd = prof(min_loc); 
     end
 
     min_val = min_val_upd; 

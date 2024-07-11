@@ -1,4 +1,4 @@
-open clear all
+clear all
 close all
 clc
 
@@ -38,7 +38,7 @@ path_to_DEM = '.\input\venable.tif';
 
 % output behaviour: 
 results_dir = '.\output\';
-proj_subdir = 'venable\'; 
+proj_subdir = 'venableshptest\'; 
 fig_subdir = 'fig\'; 
 shp_subdir = 'shp\'; 
 file_prefix = 'default_'; % (optional)
@@ -165,7 +165,13 @@ text(P_end(1) + text_offs, P_end(2) + text_offs, 'channel end', 'Color', 'm')
 % - return centerline coordinates and section lengths
 
 window_cent = ceil(window_cent/res);    % from m to [pix]
-[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr, window_cent);
+[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, ...
+                                    'search_step',      search_step, ... 
+                                    'samp_step',        cent_samp_step, ... 
+                                    'no_samp_pts',      no_cent_samp_pts, ... 
+                                    'max_no_cent_pts',  max_no_cent_pts, ... 
+                                    'min_diff_thr',     crack_thr, ... 
+                                    'window',           window_cent); 
 channel_length = sum(cent_length);      % in [pix]
 channel_length = channel_length*res;    % in [m]
 
@@ -177,7 +183,7 @@ plot(x_cent, y_cent, 'r')
 % write centerline to shapefile
 if save_shps == 1
     fn = append(shp_dir, file_prefix, 'centerline'); 
-    lines_to_shp(x_cent, y_cent, R, 'centnumber', 1, fn); 
+    lines_to_shp(x_cent, y_cent, R, fn, 'centnumber', 1); 
 end
 
 
@@ -191,12 +197,14 @@ end
 % - plot/store profiles
 % >> see "find_profiles" function
 
-[profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, prof_samp_step, no_prof_samp_pts); 
+[profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, ...
+                                        'samp_step',    prof_samp_step, ...
+                                        'no_samp_pts',  no_prof_samp_pts); 
 no_profiles = size(profiles, 2); 
 
 if save_shps == 1
     fn = append(shp_dir, file_prefix, 'profiles'); 
-    lines_to_shp(x_prof, y_prof, R, 'profnumber', 1:no_profiles, fn); 
+    lines_to_shp(x_prof, y_prof, R, fn, 'profnumber', 1:no_profiles); 
 end
 
 
@@ -223,7 +231,7 @@ if save_shps == 1
     edge_x = [edge_coord(:,1) edge_coord(:,3)];
     edge_y = [edge_coord(:,2) edge_coord(:,4)];
     fn = append(shp_dir, file_prefix, 'edges');
-    lines_to_shp(edge_x, edge_y, R, 'side', ["left", "right"], fn);     
+    lines_to_shp(edge_x, edge_y, R, fn, 'side', ["left", "right"]);     
 end
 
 

@@ -235,12 +235,20 @@ for c = 1:no_channels
     
     % find channel centerline and centerline length
     window_cent = ceil(window_cent/res);        % from m to [pix]
-    [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, search_step, cent_samp_step, no_cent_samp_pts, max_no_cent_pts, crack_thr, window_cent);
+    [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, ... 
+                                                'search_step',      search_step, ... 
+                                                'samp_step',        cent_samp_step, ... 
+                                                'no_samp_pts',      no_cent_samp_pts, ... 
+                                                'max_no_cent_pts',  max_no_cent_pts, ... 
+                                                'min_diff_thr',     crack_thr, ... 
+                                                'window',           window_cent); 
     channel_length{c} = sum(cent_length);       % in [pix]
     channel_length{c} = channel_length{c}*res;  % in [m]
 
     % find cross sectional profiles
-    [profiles{c}, x_prof{c}, y_prof{c}] = find_profiles(x_cent{c}, y_cent{c}, DEM, R, prof_samp_step, no_prof_samp_pts); 
+    [profiles{c}, x_prof{c}, y_prof{c}] = find_profiles(x_cent{c}, y_cent{c}, DEM, R, ...
+                                                'samp_step',        prof_samp_step, ...
+                                                'no_samp_pts',      no_prof_samp_pts); 
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines
@@ -288,7 +296,7 @@ if save_figs == 1 | save_shps == 1
     
         % all centerlines in a single file
         fn = append(shp_dir, file_prefix, 'all_centerlines'); 
-        lines_to_shp(x_cent, y_cent, R, 'channel_label', fchannel, fn); 
+        lines_to_shp(x_cent, y_cent, R, fn, 'channel_label', fchannel); 
         
         % centerlines and outlines in one file per channel
         for c = 1:no_channels
@@ -302,7 +310,7 @@ if save_figs == 1 | save_shps == 1
             outlines_y{3} = edge_coord{c}(:,4); 
             fline = {"centerline", "left_edge", "right_edge"}; 
             fn = append(shp_dir, file_prefix, channel_label(c), "_outlines"); 
-            lines_to_shp(outlines_x, outlines_y, R, 'line_type', fline, fn);
+            lines_to_shp(outlines_x, outlines_y, R, fn, 'line_type', fline);
         end
         
         % all profile transects in one file per channel
@@ -310,7 +318,7 @@ if save_figs == 1 | save_shps == 1
             no_profiles = size(x_prof{c}, 2); 
             fprof = 1:no_profiles;  
             fn = append(shp_dir, file_prefix, channel_label(c), "_profiles"); 
-            lines_to_shp(x_prof{c}, y_prof{c}, R, 'prof_no', fprof, fn);
+            lines_to_shp(x_prof{c}, y_prof{c}, R, fn, 'prof_no', fprof);
         end 
     end
 

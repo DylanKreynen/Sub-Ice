@@ -44,7 +44,7 @@ lelev = NaN(no_profs, 1);       % channel elevation at left edge of profile [m]
 rx = NaN(no_profs, 1);          % right edge x coord [pix]
 ry = NaN(no_profs, 1);          % right edge y coord [pix]
 relev = NaN(no_profs, 1);       % channel elevatoin at right edge of profile [m]
-% left/right is correct when looking from END to START
+% left/right is correct when looking from START to END
 
 for i = 1:no_profs
     

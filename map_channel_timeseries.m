@@ -51,7 +51,7 @@ file_prefix = 'default_'; % (optional)
 save_figs = 1;              % print figures to disk Y/N
 figs_filetype = '-dpng';    % for use with "print()"
 figs_resolution = '-r500';  % for use with "print()"
-ext_figs = 1;               % plot (and print) extended figures Y/N
+ext_figs = 0;               % plot (and print) extended figures Y/N
 save_shps = 1;              % save output as shapefiles Y/N
 
 % select method to specify channel start/end points
@@ -65,10 +65,10 @@ path_to_start_end_shp = '.\input\venable_start_end_timeseries.shp';
 
 % centerline search parameters
 search_step = 1000;               % distance to step away from last known centerline point to construct search profile [m]
-no_cent_samp_pts = 25;            % number of sampling points on search profile [-]
-cent_samp_step = 100;             % distance between sampling points on search profile [m]
+no_cent_samp_pts = 20;            % number of sampling points on search profile [-]
+cent_samp_step = 50;              % distance between sampling points on search profile [m]
 max_no_cent_pts = 50;             % when to stop looking for centerline end point [-]
-crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, pick next best point instead [m]
+crack_thr = 10;                   % if new centerline point's depth w.r.t. last known point is greater than threshold, pick next best point instead [m]
 window_cent = 0;                  % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 
 % channel cross sectional profile parameters
@@ -312,7 +312,9 @@ if save_shps == 1
     end 
 end
 
-disp(append("Done writing files. Check '", append(results_dir, proj_subdir), "' for output. "))
+if save_figs == 1 | save_shps == 1
+    disp(append("Done writing files. Check '", append(results_dir, proj_subdir), "' for output. "))
+end
 
 
 %% extended figures

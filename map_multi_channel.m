@@ -62,10 +62,10 @@ path_to_start_end_shp = '.\input\venable_start_end_4.shp';
 
 % centerline search parameters
 search_step = 1000;               % distance to step away from last known centerline point to construct search profile [m]
-no_cent_samp_pts = 25;            % number of sampling points on search profile [-]
+no_cent_samp_pts = 30;            % number of sampling points on search profile [-]
 cent_samp_step = 50;              % distance between sampling points on search profile [m]
 max_no_cent_pts = 50;             % when to stop looking for centerline end point [-]
-crack_thr = 6;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, pick next best point instead [m]
+crack_thr = 8;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, pick next best point instead [m]
 window_cent = 0;                  % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 
 % channel cross sectional profile parameters

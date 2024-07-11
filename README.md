@@ -40,7 +40,7 @@ For now, please refer to comments in the code for details!
 
 \
 **Sub-Ice**: **Su**rface-**b**ased **I**ce Shelf **C**hannel **E**xtraction  
-version as of 2024-07-10 (tested using R2024a)
+version as of 2024-07-11 (tested using R2024a)
 
 &copy; [Dylan Kreynen](https://www.mn.uio.no/geo/english/people/aca/geohyd/kreynen/)  
 University of Oslo  

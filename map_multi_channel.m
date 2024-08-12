@@ -12,7 +12,7 @@ addpath("./functions")
 %  for mapping a single channel over different DEMs.)
 % 
 %  Input: 
-%   - DEM (GeoTIFF)
+%   - DEM (GeoTIFF) 
 %   - channel start and end points (through GUI or read from shapefile)
 % 
 %  Output: 

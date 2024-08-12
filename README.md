@@ -50,3 +50,5 @@ originally a project at the International Summer School in Glaciology\
 project team members: Marcelo Santis & Dylan Kreynen\
 advisor: Karen Alley (University of Manitoba)\
 McCarthy (AK), June 2024
+
+![Sub-Ice example output.](output/fig_readme.png?raw=true)

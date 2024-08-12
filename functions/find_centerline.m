@@ -30,7 +30,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % output:
 % x_cent = vector with x coordinates of channel centerline [pix]
 % y_cent = vector with y coordinates of channel centerline [pix]
-% cent_lengths = vector with centerline section lengths [pix]
+% cent_length = vector with centerline section lengths [pix]
 % 
 % (c) Dylan Kreynen
 % University of Oslo

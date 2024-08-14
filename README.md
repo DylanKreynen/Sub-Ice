@@ -17,17 +17,18 @@ For now, please refer to comments in the code for details!
 
 #### Getting started: 
 1. Clone this GitHub repository to create a local copy of the code on your computer (or download and unzip). 
-2. Run *map_multi_channel.m* using a recent version of Matlab (code tested in R2024a - requires the Mapping Toolbox). 
-3. That's it! All data required to map your first basal channels is already included. 
+2. Update the user specifiable parameters in *config.m* as required. 
+3. Run *map_multi_channel.m* using a recent version of Matlab (code tested in R2024a). 
+4. That's it! All data required to map your first basal channels is already included. 
 
 
  #### Main scripts in this distribution: 
   - *map_multi_channel.m*:
     map one or more channels given a single DEM
-  - *map_single_channel.m*:
-    simpler version of *map_multi_channel.m* with additional comments in code
   - *map_channel_timeseries.m*:
     map a single channel over different DEMs
+  - *config.m*
+    configuration file with user specifiable variables
 
  #### Directories in this distribution: 
   - *./functions*:
@@ -44,7 +45,7 @@ version as of 2024-07-11 (tested using R2024a)
 
 &copy; [Dylan Kreynen](https://www.mn.uio.no/geo/english/people/aca/geohyd/kreynen/)  
 University of Oslo  
-June - July 2024
+June - August 2024
 
 originally a project at the International Summer School in Glaciology\
 project team members: Marcelo Santis & Dylan Kreynen\

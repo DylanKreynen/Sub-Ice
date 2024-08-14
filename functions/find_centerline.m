@@ -194,12 +194,12 @@ end
 x_cent(i+1) = P_end(1); 
 y_cent(i+1) = P_end(2); 
 
-% compute and store last section lengths: 
-cent_length(i) = sqrt((x_cent(end-1)-x_cent(end))^2 + (y_cent(end-1)-y_cent(end))^2);
-
 % strip of unnecessary NaNs: 
 x_cent = x_cent(1:i+1);
 y_cent = y_cent(1:i+1); 
+
+% compute and store last section lengths: 
+cent_length(i) = sqrt((x_cent(end-1)-x_cent(end))^2 + (y_cent(end-1)-y_cent(end))^2);
 cent_length = cent_length(1:i); 
 
 end

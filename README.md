@@ -45,7 +45,7 @@ version as of 2024-07-11 (tested using R2024a)
 
 &copy; [Dylan Kreynen](https://www.mn.uio.no/geo/english/people/aca/geohyd/kreynen/)  
 University of Oslo  
-June - August 2024
+June - Oct 2024
 
 originally a project at the International Summer School in Glaciology\
 project team members: Marcelo Santis & Dylan Kreynen\

@@ -34,7 +34,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % 
 % (c) Dylan Kreynen
 % University of Oslo
-% June - July 2024
+% June - Oct 2024
 
 
 %% inputParser

@@ -267,7 +267,7 @@ if save_shps == 1
     end 
 end
 
-if save_figs == 1 | save_shps == 1
+if save_figs == 1 || save_shps == 1
     disp(append("Done writing files. Check '", append(results_dir, proj_subdir), "' for output. "))
 end
 

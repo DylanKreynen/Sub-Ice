@@ -63,8 +63,8 @@ res = R.CellExtentInWorldX;     % resolution of DEM [m]
 
 % remove no data values, aid visualization
 % (update as required)
-DEM(DEM<-15) = NaN; % no data: -9999
-DEM(DEM>50) = 50; 
+DEM(DEM<-20) = NaN; % no data: -9999
+DEM(DEM>100) = 50; 
 
 
 %% specify channel centerline start/end points
@@ -237,7 +237,7 @@ disp("Finished mapping all channels! ")
 
 %% write to files
 
-if save_figs == 1 | save_shps == 1
+if save_figs == 1 || save_shps == 1
     disp("Writing figure- and shapefiles... ")
 
     % print overview figure to file

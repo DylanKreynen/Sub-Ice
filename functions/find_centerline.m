@@ -74,10 +74,8 @@ window = p.Results.window;
 
 %% actual function
 
-res = R.CellExtentInWorldX; % resolution of DEM [m/pix]
-x = 1:size(DEM, 1); 
-y = 1:size(DEM, 2);
-[X, Y] = meshgrid(y, x);
+res = R.CellExtentInWorldX;        % resolution of DEM [m/pix]
+DEM_int = griddedInterpolant(DEM); % interpolant for our DEM
 
 % stop criterion: 
 stop_dist = search_step; 
@@ -94,7 +92,7 @@ cent_length = NaN(max_no_cent_pts-1, 1);
 % construct sampling vector, one search step in the direction of channel end 
 [x_samp, y_samp] = centerline_query_pts(P_start, P_end, res, search_step, samp_step, no_samp_pts, 1); 
 % sample DEM at this sampling vector to get a profile
-prof = interp2(X, Y, DEM, x_samp, y_samp); 
+prof = DEM_int(y_samp, x_samp); 
 % smooth profile using mean filter
 if window ~= 0
     prof = smoothdata(prof, 'movmean', window); 
@@ -123,7 +121,7 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     end
 
     [x_samp, y_samp] = perp_search_sampling(x_cent(i-2), y_cent(i-2), x_cent(i-1), y_cent(i-1), res, search_step, samp_step, no_samp_pts, 0);
-    prof = interp2(X, Y, DEM, x_samp, y_samp); 
+    prof = DEM_int(y_samp, x_samp); % evaluate interpolant of 
     % smooth profile using mean filter
     if window ~= 0
         prof = smoothdata(prof, 'movmean', window); 

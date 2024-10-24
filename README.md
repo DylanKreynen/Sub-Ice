@@ -19,7 +19,7 @@ For now, please refer to comments in the code for details!
 1. Clone this GitHub repository to create a local copy of the code on your computer (or download and unzip). 
 2. Update the user specifiable parameters in *config.m* as required. 
 3. Run *map_multi_channel.m* using a recent version of Matlab (code tested in R2024a). 
-4. That's it! All data required to map your first basal channels is already included. 
+That's it! All data required to map your first basal channels is already included. 
 
 
  #### Main scripts in this distribution: 

@@ -52,10 +52,8 @@ no_samp_pts = p.Results.no_samp_pts;
 
 %% actual function
 
-res = R.CellExtentInWorldX; % resolution of DEM [m/pix]
-x = 1:size(DEM, 1); 
-y = 1:size(DEM, 2);
-[X, Y] = meshgrid(y, x); 
+res = R.CellExtentInWorldX;        % resolution of DEM [m/pix]
+DEM_int = griddedInterpolant(DEM); % interpolant for our DEM
 
 % for storing profiles and coords: 
 no_samp_pts = 2*(ceil(no_samp_pts/2)); 
@@ -74,7 +72,8 @@ for i = 1:length(x_cent)-1
     % profile observer should always be facing either up or downstream (seems OK, but which side is which?)
     
     % sample (interpolate) elevation profile
-    profiles(:,i) = interp2(X, Y, DEM, x_prof(:,i), y_prof(:,i));
+    %profiles(:,i) = interp2(DEM, x_prof(:,i), y_prof(:,i));
+    profiles(:,i) = DEM_int(y_prof(:,i), x_prof(:,i)); 
     
 end
 

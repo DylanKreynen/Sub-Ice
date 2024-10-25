@@ -1,11 +1,11 @@
 function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, varargin) 
-%[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, samp_step, no_samp_pts, max_no_cent_pts, min_diff_thr, window)
+%[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, search_angle, no_samp_pts, max_no_cent_pts, min_diff_thr, window)
 %Returns the coordinates of the channel centerline. 
 % basic idea: 
 % - find direction (based on start/end points or previous centerline points)
 % - step one search step in that direction
-% - construct perpendicular sampling vector at that point
-% - sample DEM (interpolate) to find elevation profile
+% - construct circular arc series of sampling points
+% - sample DEM (interpolate) to find elevation profile on circular arc
 % - find local min and select appropriate one as new centerline point
 % - repeat until channel end: step in upd dir, sample, find min
 % - return centerline coordinates and section lengths
@@ -18,7 +18,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % 
 % optional input: 
 % search_step = distance to step away from P_start to construct search profile [m] (default: 1000m)
-% samp_step = distance between sampling points on search profile [m] (default: 100m)
+% search_angle = angle of view within to look for centerline [deg] (default: 60deg)
 % no_samp_pts = number of sampling points on search profile [-] (default: 10)
 % max_no_cent_pts = when to stop looking for centerline end point [-] (default: 50m)
 % min_diff_thr = if new centerline location has an elevation value that's 
@@ -41,7 +41,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 
 % default parameter values
 default_search_step = 1000; 
-default_samp_step = 100; 
+default_search_angle = 60; 
 default_no_samp_pts =  10; 
 default_max_no_cent_pts = 50; 
 default_min_diff_thr = 100; 
@@ -57,7 +57,7 @@ addRequired(p, 'P_end', validPStartEnd)
 addRequired(p, 'DEM')
 addRequired(p, 'R', validMapCellsRef)
 addOptional(p, 'search_step', default_search_step, validScalarPosNum)
-addOptional(p, 'samp_step', default_samp_step, validScalarPosNum)
+addOptional(p, 'search_angle', default_search_angle, validScalarPosNum)
 addOptional(p, 'no_samp_pts', default_no_samp_pts, validScalarPosNum)
 addOptional(p, 'max_no_cent_pts', default_max_no_cent_pts, validScalarPosNum)
 addOptional(p, 'min_diff_thr', default_min_diff_thr, validScalarPosNum)
@@ -65,7 +65,7 @@ addOptional(p, 'window', default_window, validScalarPosNum)
 parse(p, P_start, P_end, DEM, R, varargin{:}); 
 
 search_step = p.Results.search_step; 
-samp_step = p.Results.samp_step; 
+search_angle = p.Results.search_angle; 
 no_samp_pts = p.Results.no_samp_pts; 
 max_no_cent_pts = p.Results.max_no_cent_pts; 
 min_diff_thr = p.Results.min_diff_thr; 
@@ -90,7 +90,7 @@ cent_length = NaN(max_no_cent_pts-1, 1);
 
 % start searching; find first point after "start": 
 % construct sampling vector, one search step in the direction of channel end 
-[x_samp, y_samp] = centerline_query_pts(P_start, P_end, res, search_step, samp_step, no_samp_pts, 1); 
+[x_samp, y_samp] = centerline_query_pts(P_start, P_end, res, search_step, search_angle, no_samp_pts, 1); 
 % sample DEM at this sampling vector to get a profile
 prof = DEM_int(y_samp, x_samp); 
 % smooth profile using mean filter
@@ -120,7 +120,7 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
         break
     end
 
-    [x_samp, y_samp] = perp_search_sampling(x_cent(i-2), y_cent(i-2), x_cent(i-1), y_cent(i-1), res, search_step, samp_step, no_samp_pts, 0);
+    [x_samp, y_samp] = centerline_query_pts([x_cent(i-2) y_cent(i-2)], [x_cent(i-1) y_cent(i-1)], res, search_step, search_angle, no_samp_pts, 0);
     prof = DEM_int(y_samp, x_samp); % evaluate interpolant of 
     % smooth profile using mean filter
     if window ~= 0

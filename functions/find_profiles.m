@@ -72,7 +72,6 @@ for i = 1:length(x_cent)-1
     % profile observer should always be facing either up or downstream (seems OK, but which side is which?)
     
     % sample (interpolate) elevation profile
-    %profiles(:,i) = interp2(DEM, x_prof(:,i), y_prof(:,i));
     profiles(:,i) = DEM_int(y_prof(:,i), x_prof(:,i)); 
     
 end

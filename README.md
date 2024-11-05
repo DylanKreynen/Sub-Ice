@@ -41,7 +41,7 @@ That's it! All data required to map your first basal channels is already include
 
 \
 **Sub-Ice**: **Su**rface-**b**ased **I**ce Shelf **C**hannel **E**xtraction  
-version as of 2024-07-11 (tested using R2024a)
+version as of 2024-11-05 (tested using R2024a)
 
 &copy; [Dylan Kreynen](https://www.mn.uio.no/geo/english/people/aca/geohyd/kreynen/)  
 University of Oslo  

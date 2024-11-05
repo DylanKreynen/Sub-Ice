@@ -25,7 +25,7 @@ function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, vara
 % 
 % (c) Dylan Kreynen
 % University of Oslo
-% June - July 2024
+% 2024
 
 %% inputParser
 

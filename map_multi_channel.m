@@ -20,7 +20,7 @@ clc
 % 
 %  (c) Dylan Kreynen
 %  University of Oslo
-%  June - Oct 2024
+%  2024
 % 
 %  originally a project at the Int. Summer School in Glaciology
 %  project team members: Marcelo Santis & Dylan Kreynen
@@ -186,12 +186,14 @@ edge_coord = cell(no_channels, 1);
 edge_elev = cell(no_channels, 1); 
 fchannel = cell(no_channels, 1); 
 
+% to store whether we successfully found the channel centerline: 
+channel_status = zeros(no_channels, 1); 
+
 % loop over channels
 for c = 1:no_channels
-    disp(append("Start mapping channel geometry of ", channel_label(c), ". "))
+    disp(append("Start mapping channel geometry of ", channel_label(c), ". ")) 
     
-    % find channel centerline and centerline length
-    window_cent = ceil(window_cent/res);        % from m to [pix]
+    % find centerline
     [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, ... 
                                                 'search_step',      search_step, ... 
                                                 'search_angle',     cent_search_angle, ... 
@@ -201,6 +203,11 @@ for c = 1:no_channels
                                                 'window',           window_cent); 
     channel_length{c} = sum(cent_length);       % in [pix]
     channel_length{c} = channel_length{c}*res;  % in [m]
+
+    if isnan(channel_length{c}) ~= 1
+        % found channel end
+        channel_status(c) = 1;
+    end
 
     % find cross sectional profiles
     [profiles{c}, x_prof{c}, y_prof{c}] = find_profiles(x_cent{c}, y_cent{c}, DEM, R, ...
@@ -233,6 +240,8 @@ for c = 1:no_channels
 end
 
 disp("Finished mapping all channels! ")
+
+disp(append("Supposedly mapped ", string(sum(channel_status)), " out of ", string(length(channel_status)), " channels. "))
 
 
 %% write to files

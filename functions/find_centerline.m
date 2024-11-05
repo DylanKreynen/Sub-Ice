@@ -25,7 +25,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 %                significantly different from the previously known 
 %                centerline location (determined by threshold in [m]), we
 %                likely found a crack and select the next local min instead (default: 100m)
-% window = window size for search profile smoothing [pix], set to 0 for no smoothing (default)
+% window = window size for search profile smoothing [m] (will be rounded, set to 0 for no smoothing)
 %
 % output:
 % x_cent = vector with x coordinates of channel centerline [pix]
@@ -34,7 +34,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % 
 % (c) Dylan Kreynen
 % University of Oslo
-% June - Oct 2024
+% 2024
 
 
 %% inputParser
@@ -49,7 +49,7 @@ default_window = 0;
 
 % parse input arguments
 p = inputParser; 
-validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
+validScalarPosNum = @(x) isnumeric(x) && isscalar(x);% && (x >= 0);
 validMapCellsRef = @(x) class(x) == "map.rasterref.MapCellsReference"; 
 validPStartEnd = @(x) (size(x, 1)==2 | size(x, 2)==2) && isnumeric(x(1)) && isscalar(x(1)); 
 addRequired(p, 'P_start', validPStartEnd)
@@ -76,6 +76,15 @@ window = p.Results.window;
 
 res = R.CellExtentInWorldX;        % resolution of DEM [m/pix]
 DEM_int = griddedInterpolant(DEM); % interpolant for our DEM
+
+% convert smoothing window from [m] to no. elements [-]
+% length of circular search segment [m]
+searchlen = (search_angle/360)*2*pi*search_step; 
+% step between pts on search segment [m]
+steppts = searchlen/no_samp_pts; 
+% no. of search segment pts in smoothing window [-]
+window = ceil(window/steppts);
+% idea: define samp_step [m] in config file instead?
 
 % stop criterion: 
 stop_dist = search_step; 
@@ -146,6 +155,20 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     % centerline point and the new potential centerline point. If it's
     % indeed along the centerline we should not have big bumps in it. If
     % it's a crack, there's likely "a big hill" on the profile
+
+    % idea: if we don't end up and the channel's predefined end point, we
+    % could try to find it by reversing the start and end points (i.e. look
+    % for the start point, given the end point). one more shot
+
+    % similarly: if we don't reach the channel's end point, we could go
+    % back to the step where there were multiple centerline options
+    % (multiple minima) and go for the next best one and try again
+    % follow up: mark every centerline point with a confidence score? 
+
+    % observation: for a decent number of channels, things go wrong at the
+    % very first step because the channel is locally orientated in quite a
+    % different direction than the channel end point. idea: bigger search
+    % squat for first point (180deg?)
 
     % find all local min on profile
     local_min_loc = islocalmin(prof); % logical

@@ -18,8 +18,9 @@ function [x_samp, y_samp] = centerline_query_pts(P_start, P_end, res, search_ste
 % x_samp = vector with x coordinates of sampling locations
 % y_samp = vector with y coordinates of sampling locations
 % 
-% Dylan Kreynen (University of Oslo)
-% June - Oct 2024
+% (c) Dylan Kreynen 
+% University of Oslo
+% 2024
 
 x_start = P_start(1); 
 y_start = P_start(2); 

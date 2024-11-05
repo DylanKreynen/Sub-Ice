@@ -31,7 +31,7 @@ function [edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof
 % 
 % (c) Dylan Kreynen
 % University of Oslo
-% June - July 2024
+% 2024
 
 no_profs = size(profiles, 2);    % number of cross sectional profiles [-]
 prof_length = size(profiles, 1); % length of cross sectional profiles [-] (no. of pts)

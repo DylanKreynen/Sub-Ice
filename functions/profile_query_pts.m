@@ -17,7 +17,7 @@ function [x_samp, y_samp] = profile_query_pts(P_start, P_end, res, samp_step, no
 % 
 % (c) Dylan Kreynen
 % University of Oslo
-% June - July 2024
+% 2024
 
 x_start = P_start(1); 
 y_start = P_start(2); 

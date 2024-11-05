@@ -6,7 +6,7 @@
 % 
 %  (c) Dylan Kreynen
 %  University of Oslo
-%  June - Oct 2024
+%  2024
 % 
 %  originally a project at the Int. Summer School in Glaciology
 %  project team members: Marcelo Santis & Dylan Kreynen

@@ -21,7 +21,7 @@ function [] = lines_to_shp(x, y, R, path, varargin)
 % 
 % (c) Dylan Kreynen
 % University of Oslo
-% June - July 2024
+% 2024
 
 %% inputParser
 

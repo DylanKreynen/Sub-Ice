@@ -53,7 +53,7 @@ crack_thr = 8;                    % if new centerline point's depth w.r.t. last 
 window_cent = 0;                  % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 
 % channel cross sectional profile parameters
-prof_samp_step = 50;              % sdistance between sampling points on profile [m]
+prof_samp_step = 50;              % distance between sampling points on profile [m]
 no_prof_samp_pts = 100;           % number of sampling points on profile [-]
 % note: profile length ~ no_sampling_points*prof_samp_step
 
@@ -61,5 +61,24 @@ no_prof_samp_pts = 100;           % number of sampling points on profile [-]
 slope_thr = 0.25;                 % slope threshold for identifying edge [deg]
 window_edge = 500;                % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 
+
+%% manage directories
+%  (no need to update)
+
 % add "functions" directory to search path
 addpath("./functions")
+
+% create output directories, if necessary
+if save_figs == 1 % figures
+    fig_dir = append(results_dir, proj_subdir, fig_subdir); 
+    if ~exist(fig_dir, 'dir')
+        mkdir(fig_dir)
+    end
+end
+
+if save_shps == 1 % shapefiles
+    shp_dir = append(results_dir, proj_subdir, shp_subdir); 
+    if ~exist(shp_dir, 'dir')
+        mkdir(shp_dir)
+    end
+end

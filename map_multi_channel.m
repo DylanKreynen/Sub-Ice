@@ -36,25 +36,6 @@ clc
 run 'config.m'
 
 
-%% create output directories
-
-% figures
-if save_figs == 1
-    fig_dir = append(results_dir, proj_subdir, fig_subdir); 
-    if ~exist(fig_dir, 'dir')
-        mkdir(fig_dir)
-    end
-end
-
-% shapefiles
-if save_shps == 1
-    shp_dir = append(results_dir, proj_subdir, shp_subdir); 
-    if ~exist(shp_dir, 'dir')
-        mkdir(shp_dir)
-    end
-end
-
-
 %% read DEM from GeoTIFF
 %  and some basic manipulation
 

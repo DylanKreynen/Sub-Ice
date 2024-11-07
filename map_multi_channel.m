@@ -220,9 +220,7 @@ for c = 1:no_channels
     
 end
 
-disp("Finished mapping all channels! ")
-
-disp(append("Supposedly mapped ", string(sum(channel_status)), " out of ", string(length(channel_status)), " channels. "))
+disp(append("Finished mapping. End point reached for ", string(sum(channel_status)), "/", string(length(channel_status)), " channels. "))
 
 
 %% write to files

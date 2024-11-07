@@ -139,7 +139,7 @@ elseif start_end_method == 3
     text(P_end(:,1) + text_offs, P_end(:,2) + text_offs, 'end', 'Color', 'm')
     
 else
-    error('Specify a valid method to enter channel start/end points (under "user specifiable variables"). ')
+    error('Specify a valid method to enter channel start/end points (under "user specifiable variables" in config.m). ')
 end
 
 

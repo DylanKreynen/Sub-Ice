@@ -125,7 +125,7 @@ dist_to_end = stop_dist + 1;
 while dist_to_end > stop_dist % give condition here (distance to end point)
     i = i + 1; 
     if i > max_no_cent_pts-1
-        disp("Warning: max. no. of centerline points reached, but did not reach channel end.")
+        disp("Warning: did not reach channel end (exceeded max. no. of centerline points).")
         break
     end
 

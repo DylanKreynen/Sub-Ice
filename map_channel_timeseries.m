@@ -119,7 +119,7 @@ elseif start_end_method == 3
     P_end = [260, 84];       % x, y in image coord [pix]
     
 else
-    error('Specify a valid method to enter channel start/end points (under "user specifiable variables"). ')
+    error('Specify a valid method to enter channel start/end points (under "user specifiable variables" in config.m). ')
 end
 
 % check if we have start/end points for all DEMs

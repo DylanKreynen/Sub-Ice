@@ -27,7 +27,7 @@ That's it! All data required to map your first basal channels is already include
     map one or more channels given a single DEM
   - *map_channel_timeseries.m*:
     map a single channel over different DEMs
-  - *config.m*
+  - *config.m*:
     configuration file with user specifiable variables
 
  #### Directories in this distribution: 

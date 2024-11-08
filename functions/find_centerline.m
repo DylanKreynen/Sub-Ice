@@ -1,5 +1,5 @@
 function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, varargin) 
-%[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, search_angle, no_samp_pts, max_no_cent_pts, min_diff_thr, window)
+%[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, search_angle, no_samp_pts, min_diff_thr, window, max_length_factor)
 %Returns the coordinates of the channel centerline. 
 % basic idea: 
 % - find direction (based on start/end points or previous centerline points)
@@ -20,12 +20,13 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % search_step = distance to step away from P_start to construct search profile [m] (default: 1000m)
 % search_angle = angle of view within to look for centerline [deg] (default: 60deg)
 % no_samp_pts = number of sampling points on search profile [-] (default: 10)
-% max_no_cent_pts = when to stop looking for centerline end point [-] (default: 50m)
 % min_diff_thr = if new centerline location has an elevation value that's 
 %                significantly different from the previously known 
 %                centerline location (determined by threshold in [m]), we
 %                likely found a crack and select the next local min instead (default: 100m)
 % window = window size for search profile smoothing [m] (will be rounded, set to 0 for no smoothing)
+% max_length_factor = controls when to stop looking for channel end point [-] (default: 1.75)
+%                     max. channel length = (max_length_factor)*(distance between start and end point)
 %
 % output:
 % x_cent = vector with x coordinates of channel centerline [pix]
@@ -43,7 +44,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 default_search_step = 1000; 
 default_search_angle = 60; 
 default_no_samp_pts =  10; 
-default_max_no_cent_pts = 50; 
+default_max_length_factor = 1.75; 
 default_min_diff_thr = 100; 
 default_window = 0; 
 
@@ -59,7 +60,7 @@ addRequired(p, 'R', validMapCellsRef)
 addOptional(p, 'search_step', default_search_step, validScalarPosNum)
 addOptional(p, 'search_angle', default_search_angle, validScalarPosNum)
 addOptional(p, 'no_samp_pts', default_no_samp_pts, validScalarPosNum)
-addOptional(p, 'max_no_cent_pts', default_max_no_cent_pts, validScalarPosNum)
+addOptional(p, 'max_length_factor', default_max_length_factor, validScalarPosNum)
 addOptional(p, 'min_diff_thr', default_min_diff_thr, validScalarPosNum)
 addOptional(p, 'window', default_window, validScalarPosNum)
 parse(p, P_start, P_end, DEM, R, varargin{:}); 
@@ -67,7 +68,7 @@ parse(p, P_start, P_end, DEM, R, varargin{:});
 search_step = p.Results.search_step; 
 search_angle = p.Results.search_angle; 
 no_samp_pts = p.Results.no_samp_pts; 
-max_no_cent_pts = p.Results.max_no_cent_pts; 
+max_length_factor = p.Results.max_length_factor; 
 min_diff_thr = p.Results.min_diff_thr; 
 window = p.Results.window; 
 
@@ -91,6 +92,14 @@ stop_dist = search_step;
 stop_dist = stop_dist/res;  % now in [pix]
 % when we are less than a search step away from the end point, we have
 % reached our destination/centerline is considered complete
+
+% alternative stop criterion: max. centerline length reached
+if max_length_factor < 1
+    disp("Warning: max_length_factor < 1, will not be able to reach channel centerline end point. ")
+end
+dist_start_end = sqrt((P_start(1)-P_end(1))^2 + (P_start(2)-P_end(2))^2);   % [pix]
+dist_start_end = dist_start_end*res;                                        % [m]
+max_no_cent_pts = ceil((max_length_factor*dist_start_end)/search_step);     % [-] max. no of centerline points
 
 % preallocate for speed: 
 x_cent = NaN(max_no_cent_pts, 1); 
@@ -125,7 +134,7 @@ dist_to_end = stop_dist + 1;
 while dist_to_end > stop_dist % give condition here (distance to end point)
     i = i + 1; 
     if i > max_no_cent_pts-1
-        disp("Warning: did not reach channel end (exceeded max. no. of centerline points).")
+        disp("Warning: did not reach channel end (exceeded max. centerline length). ")
         break
     end
 

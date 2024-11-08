@@ -1,5 +1,5 @@
 function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, varargin) 
-%[x_cent, y_cent, cent_length] = find_centerline_anticrack(P_start, P_end, DEM, R, search_step, search_angle, no_samp_pts, min_diff_thr, window, max_length_factor)
+%[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, search_angle, no_samp_pts, min_diff_thr, window, max_length_factor)
 %Returns the coordinates of the channel centerline. 
 % basic idea: 
 % - find direction (based on start/end points or previous centerline points)
@@ -163,7 +163,7 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     % one more idea: we could sample a profile between the last known
     % centerline point and the new potential centerline point. If it's
     % indeed along the centerline we should not have big bumps in it. If
-    % it's a crack, there's likely "a big hill" on the profile
+    % it's a crack, there's likely "a big hill" on the profile (or a steep one)
 
     % idea: if we don't end up and the channel's predefined end point, we
     % could try to find it by reversing the start and end points (i.e. look

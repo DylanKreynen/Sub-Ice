@@ -17,15 +17,17 @@
 %% user specifiable variables
 %  (update as required)
 
-% path to DEM (should be GeoTIFF)
-path_to_DEM = '..\REMA\venable_10m.tif'; 
+% ice shelf DEM (should be GeoTIFF)
+path_to_DEM = '..\REMA\venable_10m.tif'; % to a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries-m
+DEM_nodata = -9999;         % DEM no data value
+window_DEM = 11;            % window size for DEM smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 
 % output behaviour: 
 results_dir = '.\output\';
 proj_subdir = 'venable\'; 
 fig_subdir = 'fig\'; 
 shp_subdir = 'shp\'; 
-file_prefix = 'default_'; % (optional)
+file_prefix = 'default_';   % (optional)
 % output path will be constructed as follows: 
 % results_dir\proj_subdir\fig_subdir\file_prefix_....ext
 

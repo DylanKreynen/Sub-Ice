@@ -20,7 +20,8 @@
 % ice shelf DEM (should be GeoTIFF)
 path_to_DEM = '..\REMA\venable_10m.tif'; % to a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries-m
 DEM_nodata = -9999;         % DEM no data value
-window_DEM = 11;            % window size for DEM smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
+window_DEM = 0;             % window size for DEM smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
+                            % only works with map_multi_channel.m variations (TO DO: implement in map_channel_timeseries.m)
 
 % output behaviour: 
 results_dir = '.\output\';

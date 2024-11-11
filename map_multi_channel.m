@@ -37,21 +37,48 @@ run 'config.m'
 
 
 %% read DEM from GeoTIFF
-%  and some basic manipulation
+%  and smooth if required
 
+% read from geotiff
 [DEM, R] = readgeoraster(path_to_DEM);
 res = R.CellExtentInWorldX;     % resolution of DEM [m]
 
-% replace no data values (-9999 to NaN)
-DEM(DEM==-9999) = NaN; 
+% replace no data with NaN
+DEM(DEM==DEM_nodata) = NaN; 
 
-% color limits for visualisation (update as required)
-clims = [-20 80];              % [m]
+% check if smoothed version of DEM exists
+% if it exists: load
+% if not: smooth DEM (and save)
+if window_DEM ~= 0
+    % smoothing requested by user
+    fn_smooth = append(path_to_DEM(1:end-4), '_smooth_', string(window_DEM)', '.mat'); 
+    window = ceil(window_DEM/res);  % from [m] to [pix]
+    try 
+        DEM_smooth = load(fn_smooth).DEM_smooth; 
+        disp(append("Loaded smoothed version of DEM from disk: ", fn_smooth))
+    catch
+        disp(append("Could not find smoothed version of DEM. Smoothing now. Window size: ", string(window_DEM), " [m] (ca. ", string(window), " [pix]). "))
+        DEM_smooth = smoothdata2(DEM, 'movmean', window, 'omitnan'); 
+        save(fn_smooth, 'DEM_smooth'); 
+    end
+    
+    % test: check if DEM dimensions agree
+    if size(DEM) ~= size(DEM_smooth)
+        error("Dimensions of DEM and smoothed version do not agree. ")
+    end
+else
+    % no smoothing requested
+    DEM_smooth = DEM; 
+    disp("Loaded DEM, no smoothing requested. ")
+end
 
 
 %% specify channel centerline start/end points
 %  have user click on channel start and end points through GUI, read start
 %  and end points from shapefile or enter img coordinates manually
+
+% color limits for visualisation (update as required)
+clims = [-20 80];              % [m]
 
 figure(1)
 imagesc(DEM, clims)
@@ -176,7 +203,8 @@ for c = 1:no_channels
     disp(append("Start mapping channel geometry of ", channel_label(c), ". ")) 
     
     % find centerline
-    [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM, R, ... 
+    % attention: possibly using smoothed DEM to find centerlines! 
+    [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM_smooth, R, ... 
                                                 'search_step',      search_step, ... 
                                                 'search_angle',     cent_search_angle, ... 
                                                 'no_samp_pts',      no_cent_samp_pts, ... 

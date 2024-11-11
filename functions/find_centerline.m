@@ -20,10 +20,8 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % search_step = distance to step away from P_start to construct search profile [m] (default: 1000m)
 % search_angle = angle of view within to look for centerline [deg] (default: 60deg)
 % no_samp_pts = number of sampling points on search profile [-] (default: 10)
-% min_diff_thr = if new centerline location has an elevation value that's 
-%                significantly different from the previously known 
-%                centerline location (determined by threshold in [m]), we
-%                likely found a crack and select the next local min instead (default: 100m)
+% max_gradient = if newly found centerline segment exceeds this gradient, we assume we found
+%                a crack instead > take next best candidate as new centerline point [%]
 % window = window size for search profile smoothing [m] (will be rounded, set to 0 for no smoothing)
 % max_length_factor = controls when to stop looking for channel end point [-] (default: 1.75)
 %                     max. channel length = (max_length_factor)*(distance between start and end point)
@@ -45,7 +43,7 @@ default_search_step = 1000;
 default_search_angle = 60; 
 default_no_samp_pts =  10; 
 default_max_length_factor = 1.75; 
-default_min_diff_thr = 100; 
+default_max_gradient = 10; 
 default_window = 0; 
 
 % parse input arguments
@@ -61,7 +59,7 @@ addOptional(p, 'search_step', default_search_step, validScalarPosNum)
 addOptional(p, 'search_angle', default_search_angle, validScalarPosNum)
 addOptional(p, 'no_samp_pts', default_no_samp_pts, validScalarPosNum)
 addOptional(p, 'max_length_factor', default_max_length_factor, validScalarPosNum)
-addOptional(p, 'min_diff_thr', default_min_diff_thr, validScalarPosNum)
+addOptional(p, 'max_gradient', default_max_gradient, validScalarPosNum)
 addOptional(p, 'window', default_window, validScalarPosNum)
 parse(p, P_start, P_end, DEM, R, varargin{:}); 
 
@@ -69,7 +67,7 @@ search_step = p.Results.search_step;
 search_angle = p.Results.search_angle; 
 no_samp_pts = p.Results.no_samp_pts; 
 max_length_factor = p.Results.max_length_factor; 
-min_diff_thr = p.Results.min_diff_thr; 
+max_gradient = p.Results.max_gradient; 
 window = p.Results.window; 
 
 
@@ -92,6 +90,11 @@ stop_dist = search_step;
 stop_dist = stop_dist/res;  % now in [pix]
 % when we are less than a search step away from the end point, we have
 % reached our destination/centerline is considered complete
+
+% translate max_gradient to max. elevation difference
+% if newly found centerline point's elevation exceeds this value, we assume 
+% we found a crack instead and take the next best local min on search profile
+max_diff_elev = (max_gradient/100)*search_step; 
 
 % alternative stop criterion: max. centerline length reached
 if max_length_factor < 1
@@ -145,13 +148,6 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
         prof = smoothdata(prof, 'movmean', window);
     end
     
-    % update "anti-crack": rather than find the absolute min of the profile,
-    % we find all local min. then select the appropriate one
-    %  - local min which best preserves centerline direction, 
-    %  - whose elev diff wrt prev centerline point does not exceed threshold
-    % if no appropriate local min can be found we preserve direction from
-    % previous centerline section
-
     % another idea: basal channels tend to be smooth, cracks sharp
     % can we use that to distinguish between the channel and a crack? 
     % e.g. make cross sectional profiles on the go and compare slopes
@@ -189,8 +185,7 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
         min_val_upd = prof(min_loc); 
 
         % check for depth wrt previous centerline point threshold
-        if (min_val - min_val_upd) > min_diff_thr
-            % disp(append("Avoided a CRACK! Cent. idx. ", string(i-1)))
+        if (min_val - min_val_upd) > max_diff_elev
             % remove local min from list and try again
             local_min_loc(min_loc) = 0; 
         else

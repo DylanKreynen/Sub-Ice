@@ -39,6 +39,10 @@ run 'config.m'
 %% list DEMs/GeoTIFFs
 %  and corresponding dates
 
+if path_to_DEM(end-3:end) == '.tif'
+    error("path_to_DEM should point to a directory with DEMs, not a single DEM (check in config.m).")
+end
+
 DEM_files = dir(append(path_to_DEM, '*.tif')); 
 DEM_files = {DEM_files.name}'; 
 no_DEMs = length(DEM_files); 
@@ -156,11 +160,10 @@ for t = 1:no_DEMs
     window_cent = ceil(window_cent/res);        % from m to [pix]
     [x_cent{t}, y_cent{t}, cent_length] = find_centerline(P_start(t,:), P_end(t,:), DEM, R, ... 
                                                 'search_step',      search_step, ... 
-                                                'samp_step',        cent_samp_step, ... 
+                                                'samp_angle',       search_angle, ... 
                                                 'no_samp_pts',      no_cent_samp_pts, ... 
-                                                'min_diff_thr',     crack_thr, ... 
+                                                'max_gradient',     max_gradient, ... 
                                                 'window',           window_cent); 
-
     channel_length{t} = sum(cent_length);       % in [pix]
     channel_length{t} = channel_length{t}*res;  % in [m]
 

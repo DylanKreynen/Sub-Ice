@@ -71,7 +71,7 @@ if start_end_method == 1
     
     for t = 1:no_DEMs    
         DEM = readgeoraster(append(path_to_DEM, DEM_files{t})); 
-        DEM(DEM==-9999) = NaN;  % replace no data values
+        DEM(DEM==DEM_nodata) = NaN;  % replace no data values
     
         figure(1)
         hold off
@@ -150,8 +150,7 @@ for t = 1:no_DEMs
     % read DEM from GeoTIFF
     [DEM, R] = readgeoraster(append(path_to_DEM, DEM_files{t}));
     res = R.CellExtentInWorldX;     % resolution of DEM [m]
-    DEM(DEM<-10) = NaN;  % remove no data (-999), 
-    DEM(DEM>50) = 50;    % and aid vizualisation (update as required)
+    DEM(DEM==DEM_nodata) = NaN;     % replace no data values
     
     % find channel centerline and centerline length
     window_cent = ceil(window_cent/res);        % from m to [pix]

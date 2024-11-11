@@ -18,7 +18,7 @@
 %  (update as required)
 
 % ice shelf DEM (should be GeoTIFF)
-path_to_DEM = '..\REMA\venable_10m.tif'; % to a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries-m
+path_to_DEM = '.\input\venable.tif'; % to a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries.m
 DEM_nodata = -9999;         % DEM no data value
 window_DEM = 0;             % window size for DEM smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
                             % only works with map_multi_channel.m variations (TO DO: implement in map_channel_timeseries.m)
@@ -48,12 +48,12 @@ path_to_start_end_shp = '.\input\venable_start_end_4.shp';
 % important: only works if shapefile has same map projection as DEM! 
 
 % centerline search parameters
-search_step = 1000;               % distance to step away from last known centerline point to construct search profile [m]
-no_cent_samp_pts = 30;            % number of sampling points on circular arc search profile [-]
+search_step = 1500;               % distance to step away from last known centerline point to construct search profile [m]
+no_cent_samp_pts = 20;            % number of sampling points on circular arc search profile [-]
 cent_search_angle = 90;           % angle of view within to look for centerline [deg]
-max_no_cent_pts = 50;             % when to stop looking for centerline end point [-]
-crack_thr = 8;                    % if new centerline point's depth w.r.t. last known point is greater than threshold, pick next best point instead [m]
+crack_thr = 25;                   % if new centerline point's depth w.r.t. last known point is greater than threshold, pick next best point instead [m]
 window_cent = 0;                  % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
+% len = (cent_search_angle/360)*2*pi*search_step # length of search segment
 
 % channel cross sectional profile parameters
 prof_samp_step = 50;              % distance between sampling points on profile [m]

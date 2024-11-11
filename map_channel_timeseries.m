@@ -39,7 +39,7 @@ run 'config.m'
 %% list DEMs/GeoTIFFs
 %  and corresponding dates
 
-DEM_files = dir(append(path_to_DEMs, '*.tif')); 
+DEM_files = dir(append(path_to_DEM, '*.tif')); 
 DEM_files = {DEM_files.name}'; 
 no_DEMs = length(DEM_files); 
 
@@ -70,7 +70,7 @@ if start_end_method == 1
     P_end = NaN(no_DEMs, 2); 
     
     for t = 1:no_DEMs    
-        DEM = readgeoraster(append(path_to_DEMs, DEM_files{t})); 
+        DEM = readgeoraster(append(path_to_DEM, DEM_files{t})); 
         DEM(DEM==-9999) = NaN;  % replace no data values
     
         figure(1)
@@ -98,7 +98,7 @@ if start_end_method == 1
 elseif start_end_method == 2
     % read start/end points from shapefile
     % only works if shapefile has same map projection as first DEM!
-    [~, R] = readgeoraster(append(path_to_DEMs, DEM_files{1})); 
+    [~, R] = readgeoraster(append(path_to_DEM, DEM_files{1})); 
     S = shaperead(path_to_start_end_shp); 
     [x_startend, y_startend] =  worldToIntrinsic(R, vertcat(S.X), vertcat(S.Y));
     
@@ -148,7 +148,7 @@ for t = 1:no_DEMs
     disp(append("Start mapping channel geometry on ", string(dates(t)), ". "))
 
     % read DEM from GeoTIFF
-    [DEM, R] = readgeoraster(append(path_to_DEMs, DEM_files{t}));
+    [DEM, R] = readgeoraster(append(path_to_DEM, DEM_files{t}));
     res = R.CellExtentInWorldX;     % resolution of DEM [m]
     DEM(DEM<-10) = NaN;  % remove no data (-999), 
     DEM(DEM>50) = 50;    % and aid vizualisation (update as required)

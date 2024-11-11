@@ -61,7 +61,8 @@ end
 %  have user click on channel start and end points through GUI, read start
 %  and end points from shapefile or enter img coordinates manually 
 
-text_offs = 15;  % [pix] (for plotting only)
+text_offs = 15;     % [pix] (for plotting only)
+clims = [-20 80];   % [m] (color limits for DEM visualisation)
 
 if start_end_method == 1
     % click start/end points
@@ -70,12 +71,11 @@ if start_end_method == 1
     
     for t = 1:no_DEMs    
         DEM = readgeoraster(append(path_to_DEMs, DEM_files{t})); 
-        DEM(DEM<-10) = NaN;  % remove no data (-9999), 
-        DEM(DEM>50) = 50;    % and aid vizualisation
+        DEM(DEM==-9999) = NaN;  % replace no data values
     
         figure(1)
         hold off
-        imagesc(DEM)
+        imagesc(DEM, clims)
         hold on
         axis image
         colormap gray
@@ -180,7 +180,7 @@ for t = 1:no_DEMs
 
     % vizualise
     figure(t)
-    imagesc(DEM)
+    imagesc(DEM, clims)
     axis image
     colormap gray
     title(append('mapped channel geometry on ', fchannel{t}))

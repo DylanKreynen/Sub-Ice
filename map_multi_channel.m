@@ -42,10 +42,11 @@ run 'config.m'
 [DEM, R] = readgeoraster(path_to_DEM);
 res = R.CellExtentInWorldX;     % resolution of DEM [m]
 
-% remove no data values, aid visualization
-% (update as required)
-DEM(DEM<-20) = NaN; % no data: -9999
-DEM(DEM>100) = 50; 
+% replace no data values (-9999 to NaN)
+DEM(DEM==-9999) = NaN; 
+
+% color limits for visualisation (update as required)
+clims = [-20 80];              % [m]
 
 
 %% specify channel centerline start/end points
@@ -53,7 +54,7 @@ DEM(DEM>100) = 50;
 %  and end points from shapefile or enter img coordinates manually
 
 figure(1)
-imagesc(DEM)
+imagesc(DEM, clims)
 hold on
 axis image
 colormap gray
@@ -148,7 +149,7 @@ end
 
 f = figure(1); 
 hold off
-imagesc(DEM)
+imagesc(DEM, clims)
 axis image
 colormap gray
 title('mapped channel geometries (overview)')

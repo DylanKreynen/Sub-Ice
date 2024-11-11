@@ -113,7 +113,7 @@ cent_length = NaN(max_no_cent_pts-1, 1);
 prof = DEM_int(y_samp, x_samp); 
 % smooth profile using mean filter
 if window ~= 0
-    prof = smoothdata(prof, 'movmean', window); 
+    prof = smoothdata(prof, 'movmean', window, 'omitnan'); 
 end
 % find min of profile = new centerline location
 [min_val, min_loc] = min(prof);
@@ -134,7 +134,7 @@ dist_to_end = stop_dist + 1;
 while dist_to_end > stop_dist % give condition here (distance to end point)
     i = i + 1; 
     if i > max_no_cent_pts-1
-        disp("Warning: did not reach channel end (exceeded max. centerline length). ")
+        %disp("Warning: did not reach channel end (exceeded max. centerline length). ")
         break
     end
 
@@ -142,7 +142,7 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     prof = DEM_int(y_samp, x_samp); % evaluate interpolant of 
     % smooth profile using mean filter
     if window ~= 0
-        prof = smoothdata(prof, 'movmean', window); 
+        prof = smoothdata(prof, 'movmean', window);
     end
     
     % update "anti-crack": rather than find the absolute min of the profile,

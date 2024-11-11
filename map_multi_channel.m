@@ -40,7 +40,7 @@ run 'config.m'
 %  and smooth if required
 
 if path_to_DEM(end-3:end) ~= '.tif'
-    error("path_to_DEM should point to a single DEM .tif file (check in config.m).")
+    error("path_to_DEM should point to a single DEM .tif file (check in config.m). ")
 end
 
 % read from geotiff
@@ -59,17 +59,18 @@ if window_DEM ~= 0
     window = ceil(window_DEM/res);  % from [m] to [pix]
     try 
         DEM_smooth = load(fn_smooth).DEM_smooth; 
-        disp(append("Loaded smoothed version of DEM from disk: ", fn_smooth))
+        disp(append("Loaded smoothed version of DEM from disk: ", fn_smooth, " Window size: ", string(window_DEM), " [m] (ca. ", string(window), " [pix]). "))
     catch
         disp(append("Could not find smoothed version of DEM. Smoothing now. Window size: ", string(window_DEM), " [m] (ca. ", string(window), " [pix]). "))
         DEM_smooth = smoothdata2(DEM, 'movmean', window, 'omitnan'); 
         save(fn_smooth, 'DEM_smooth'); 
     end
-    
+   
     % test: check if DEM dimensions agree
     if size(DEM) ~= size(DEM_smooth)
         error("Dimensions of DEM and smoothed version do not agree. ")
     end
+
 else
     % no smoothing requested
     DEM_smooth = DEM; 
@@ -213,11 +214,12 @@ for c = 1:no_channels
                                                 'search_angle',     search_angle, ... 
                                                 'no_samp_pts',      no_cent_samp_pts, ... 
                                                 'max_gradient',     max_gradient, ... 
-                                                'window',           window_cent); 
+                                                'window',           window_cent, ...
+                                                'max_recursions',   max_recursions); 
     channel_length{c} = sum(cent_length);       % in [pix]
     channel_length{c} = channel_length{c}*res;  % in [m]
 
-    if isnan(channel_length{c}) ~= 1
+    if ~isnan(channel_length{c})
         % found channel end
         channel_status(c) = 1;
     end

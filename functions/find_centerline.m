@@ -1,5 +1,5 @@
 function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, varargin) 
-%[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, search_angle, no_samp_pts, min_diff_thr, window, max_length_factor)
+%[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, search_angle, no_samp_pts, max_gradient, window, max_length_factor, max_recursions)
 %Returns the coordinates of the channel centerline. 
 % basic idea: 
 % - find direction (based on start/end points or previous centerline points)
@@ -9,6 +9,8 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % - find local min and select appropriate one as new centerline point
 % - repeat until channel end: step in upd dir, sample, find min
 % - return centerline coordinates and section lengths
+% note: if the channel end point is not reached, this function can try
+% again recursively with updated search parameters (set max_recursions > 1)
 %
 % required input:
 % P_start = vector containing x and y img coordinates of start point [pix]
@@ -25,6 +27,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % window = window size for search profile smoothing [m] (will be rounded, set to 0 for no smoothing)
 % max_length_factor = controls when to stop looking for channel end point [-] (default: 1.75)
 %                     max. channel length = (max_length_factor)*(distance between start and end point)
+% max_recursions = max. no. of attempts with updated search parameters [-] (set to 1 for no recursion) (default = 1)
 %
 % output:
 % x_cent = vector with x coordinates of channel centerline [pix]
@@ -45,10 +48,11 @@ default_no_samp_pts =  10;
 default_max_length_factor = 1.75; 
 default_max_gradient = 10; 
 default_window = 0; 
+default_max_recursions = 1; 
 
 % parse input arguments
 p = inputParser; 
-validScalarPosNum = @(x) isnumeric(x) && isscalar(x);% && (x >= 0);
+validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
 validMapCellsRef = @(x) class(x) == "map.rasterref.MapCellsReference"; 
 validPStartEnd = @(x) (size(x, 1)==2 | size(x, 2)==2) && isnumeric(x(1)) && isscalar(x(1)); 
 addRequired(p, 'P_start', validPStartEnd)
@@ -61,6 +65,7 @@ addOptional(p, 'no_samp_pts', default_no_samp_pts, validScalarPosNum)
 addOptional(p, 'max_length_factor', default_max_length_factor, validScalarPosNum)
 addOptional(p, 'max_gradient', default_max_gradient, validScalarPosNum)
 addOptional(p, 'window', default_window, validScalarPosNum)
+addOptional(p, 'max_recursions', default_max_recursions, validScalarPosNum)
 parse(p, P_start, P_end, DEM, R, varargin{:}); 
 
 search_step = p.Results.search_step; 
@@ -69,6 +74,7 @@ no_samp_pts = p.Results.no_samp_pts;
 max_length_factor = p.Results.max_length_factor; 
 max_gradient = p.Results.max_gradient; 
 window = p.Results.window; 
+max_recursions = p.Results.max_recursions; 
 
 
 %% actual function
@@ -227,4 +233,88 @@ y_cent = y_cent(1:i+1);
 cent_length(i) = sqrt((x_cent(end-1)-x_cent(end))^2 + (y_cent(end-1)-y_cent(end))^2);
 cent_length = cent_length(1:i); 
 
+
+%% keep trying! 
+it_no = 1; 
+if max_recursions > 1
+    % we should check whether we reached channel end, or if we need to try
+    % again with slightly different search parameters
+    
+    channel_length = sum(cent_length); % [pix]
+    if ~isnan(channel_length)
+        % found channel end, exit function
+        disp("Found channel centerline on first try. ")
+        return
+    else
+        % flip start and end points and try again
+        it_no = it_no + 1; 
+        [x_cent, y_cent, cent_length] = find_centerline(P_end, P_start, DEM, R, ... 
+                                                            'search_step',      search_step, ... 
+                                                            'search_angle',     search_angle, ... 
+                                                            'no_samp_pts',      no_samp_pts, ... 
+                                                            'max_gradient',     max_gradient, ... 
+                                                            'window',           window, ...
+                                                            'max_length_factor',max_length_factor); 
+        channel_length = sum(cent_length); % [pix]
+        if ~isnan(channel_length)
+            % found channel end, flip and exit function
+            x_cent = flip(x_cent); 
+            y_cent = flip(y_cent); 
+            cent_length = flip(cent_length); 
+            disp("Found channel centerline on second try (reversed). ")
+            return
+        end
+    end
+    
+    % if we end up here, we still did not find channel end... 
+    % start disturbing the centerline search parameters (slightly)
+    while it_no < max_recursions
+        % jiggle input parameters
+        pret = randn(5, 1);      % preturbations, randomly drawn from normal distribution
+        pret = 1 + pret*0.05;    % rescale: small preturbations only
+        loop_search_step = pret(1)*search_step;
+        loop_search_angle = pret(2)*search_angle;
+        loop_no_samp_pts = pret(3)*no_samp_pts;
+        loop_max_gradient = pret(4)*max_gradient;
+        loop_window = pret(5)*window;
+    
+        % try and find centerline again (start to end and end to start)
+        it_no = it_no + 1; 
+        [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, ... 
+                                                            'search_step',      loop_search_step, ... 
+                                                            'search_angle',     loop_search_angle, ... 
+                                                            'no_samp_pts',      loop_no_samp_pts, ... 
+                                                            'max_gradient',     loop_max_gradient, ... 
+                                                            'window',           loop_window, ...
+                                                            'max_length_factor',max_length_factor); 
+        channel_length = sum(cent_length); % [pix]
+        if ~isnan(channel_length)
+            % found channel end, exit function
+            disp(append("Found channel centerline on recursion no. ", string(it_no), ". "))
+            return
+        else
+            % flip start and end points and try again
+            it_no = it_no + 1; 
+            [x_cent, y_cent, cent_length] = find_centerline(P_end, P_start, DEM, R, ... 
+                                                                'search_step',      loop_search_step, ... 
+                                                                'search_angle',     loop_search_angle, ... 
+                                                                'no_samp_pts',      loop_no_samp_pts, ... 
+                                                                'max_gradient',     loop_max_gradient, ... 
+                                                                'window',           loop_window, ...
+                                                                'max_length_factor',max_length_factor); 
+            channel_length = sum(cent_length); % [pix]
+            if ~isnan(channel_length)
+                % found channel end, flip and exit function
+                x_cent = flip(x_cent); 
+                y_cent = flip(y_cent); 
+                cent_length = flip(cent_length); 
+                disp(append("Found channel centerline on recursion no. ", string(it_no), " (reversed). "))
+                return
+            end
+        end
+    end
+    
+    disp("Warning: did not reach channel end (exceeded max. no. of centerline search recursions). ")
 end
+
+end % of function

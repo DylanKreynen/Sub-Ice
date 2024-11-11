@@ -53,12 +53,13 @@ no_cent_samp_pts = 20;            % number of sampling points on circular arc se
 search_angle = 90;                % angle of view within to look for centerline [deg]
 max_gradient = 2;                 % if new centerline point' elevation exceeds max. gradient, pick next best point instead [%]
 window_cent = 0;                  % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
-% len = (cent_search_angle/360)*2*pi*search_step # length of search segment
+max_recursions = 1;               % keep trying with slightly different search parameters in case channel end point is not found [-] (set to 0 or 1 for no recursion)
+% length of search segment = (search_angle/360)*2*pi*search_step
 
 % channel cross sectional profile parameters
 prof_samp_step = 50;              % distance between sampling points on profile [m]
 no_prof_samp_pts = 100;           % number of sampling points on profile [-]
-% note: profile length ~ no_sampling_points*prof_samp_step
+% profile length = no_sampling_points*prof_samp_step
 
 % channel edge parameters
 slope_thr = 0.25;                 % slope threshold for identifying edge [deg]

@@ -1,5 +1,5 @@
 function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, varargin)
-%[profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, samp_step, no_samp_pts)
+%[profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, prof_length)
 %Returns channel cross sectional profiles along channel centerline. 
 % basic idea: 
 % - find midpoint between two centerline locations 
@@ -15,8 +15,7 @@ function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, vara
 % R = spatial referencing information for the array [-]
 %
 % optional input: 
-% samp_step = distance between sampling points on profile [m] (default: 100m)
-% no_samp_pts = number of sampling points on profile [-] (default: 10)
+% prof_length = length of cross sectional profiles [m] (default: 2500m)
 %
 % output: 
 % profiles = matrix containing profiles' sampled elevation [m]
@@ -30,8 +29,7 @@ function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, vara
 %% inputParser
 
 % default parameter values
-default_samp_step = 100; 
-default_no_samp_pts =  10; 
+default_prof_length = 2500; 
 
 % parse input arguments
 p = inputParser; 
@@ -42,18 +40,20 @@ addRequired(p, 'x_cent', validxycent)
 addRequired(p, 'y_cent', validxycent)
 addRequired(p, 'DEM')
 addRequired(p, 'R', validMapCellsRef)
-addOptional(p, 'samp_step', default_samp_step, validScalarPosNum)
-addOptional(p, 'no_samp_pts', default_no_samp_pts, validScalarPosNum)
+addOptional(p, 'prof_length', default_prof_length, validScalarPosNum)
 parse(p, x_cent, y_cent, DEM, R, varargin{:}); 
 
-samp_step = p.Results.samp_step; 
-no_samp_pts = p.Results.no_samp_pts; 
+prof_length = p.Results.prof_length; 
 
 
 %% actual function
 
 res = R.CellExtentInWorldX;        % resolution of DEM [m/pix]
 DEM_int = griddedInterpolant(DEM); % interpolant for our DEM
+
+% determine sampling step and number of pts on profile: 
+samp_step = res; 
+no_samp_pts = ceil(prof_length/samp_step);
 
 % for storing profiles and coords: 
 no_samp_pts = 2*(ceil(no_samp_pts/2)); 

@@ -225,13 +225,12 @@ for c = 1:no_channels
 
     % find cross sectional profiles
     [profiles{c}, x_prof{c}, y_prof{c}] = find_profiles(x_cent{c}, y_cent{c}, DEM, R, ...
-                                                'samp_step',        prof_samp_step, ...
-                                                'no_samp_pts',      no_prof_samp_pts); 
+                                                'prof_length',      prof_length); 
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines
     window_edge = ceil(window_edge/res);        % from m to [pix]
-    [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, prof_samp_step, slope_thr, window_edge); 
+    [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, res, slope_thr, window_edge); 
     
     % vizualise
     % centerlines

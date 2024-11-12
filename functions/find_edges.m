@@ -1,5 +1,5 @@
-function [edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof, samp_step, slope_thr, window)
-%[edge_idx, edge_coord, edge_elev] = find_edges_filt(profiles, x_prof, y_prof, samp_step, slope_thr, window)
+function [edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof, res, slope_thr, window)
+%[edge_idx, edge_coord, edge_elev] = find_edges_filt(profiles, x_prof, y_prof, res, slope_thr, window)
 %Returns indices of channel cross sectional profiles that correspond with
 %the channel's outer edges. Right now this is based on a slope threshold:
 %returns the first indices where a slope threshold is met, áfter reaching 
@@ -12,7 +12,7 @@ function [edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof
 % profiles = matrix containing profiles' sampled elevation [m]
 % x_prof = matrix containing profiles' x coordinates [pix]
 % y_prof = matrix containing profiles' y coordinates [pix]
-% samp_step = distance between sampling points on profile [m]
+% res = spatial resolution of DEM [m]
 % slope_thr = slope threshold for identifying channel edge [deg]
 % window = window size for profile smoothing [pix] (set to 0 for no smoothing)
 %
@@ -35,6 +35,8 @@ function [edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof
 
 no_profs = size(profiles, 2);    % number of cross sectional profiles [-]
 prof_length = size(profiles, 1); % length of cross sectional profiles [-] (no. of pts)
+samp_step = sqrt((x_prof(1,1)-x_prof(2,1))^2 + (y_prof(1,1)-y_prof(2,1))^2); % [pix]
+samp_step = samp_step*res;       % distance between sampling points, now in [m]
 
 ledge_idx = NaN(no_profs, 1);   % left edge index ("upper" edge in previous versions)
 redge_idx = NaN(no_profs, 1);   % right edge index ("lower" edge in previous versions)

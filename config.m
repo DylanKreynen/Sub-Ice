@@ -56,9 +56,7 @@ max_recursions = 1;               % keep trying with slightly different search p
 % length of search segment = (search_angle/360)*2*pi*search_step
 
 % channel cross sectional profile parameters
-prof_samp_step = 50;              % distance between sampling points on profile [m]
-no_prof_samp_pts = 100;           % number of sampling points on profile [-]
-% profile length = no_sampling_points*prof_samp_step
+prof_length = 4000;               % length of cross sectional profiles [m]
 
 % channel edge parameters
 slope_thr = 0.25;                 % slope threshold for identifying edge [deg]

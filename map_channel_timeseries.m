@@ -168,13 +168,12 @@ for t = 1:no_DEMs
 
     % find cross sectional profiles
     [profiles{t}, x_prof{t}, y_prof{t}] = find_profiles(x_cent{t}, y_cent{t}, DEM, R, ...
-                                                'samp_step',        prof_samp_step, ...
-                                                'no_samp_pts',      no_prof_samp_pts); 
+                                                'prof_length',      prof_length); 
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines
     window_edge = ceil(window_edge/res);        % from m to [pix]
-    [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges(profiles{t}, x_prof{t}, y_prof{t}, prof_samp_step, slope_thr, window_edge); 
+    [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges(profiles{t}, x_prof{t}, y_prof{t}, res, slope_thr, window_edge); 
     
     % label for shapefile
     fchannel{t} = string(dates(t)); 

@@ -21,7 +21,6 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % optional input: 
 % search_step = distance to step away from P_start to construct search profile [m] (default: 1000m)
 % search_angle = angle of view within to look for centerline [deg] (default: 60deg)
-% no_samp_pts = number of sampling points on search profile [-] (default: 10)
 % max_gradient = if newly found centerline segment exceeds this gradient, we assume we found
 %                a crack instead > take next best candidate as new centerline point [%]
 % window = window size for search profile smoothing [m] (will be rounded, set to 0 for no smoothing)
@@ -44,7 +43,6 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % default parameter values
 default_search_step = 1000; 
 default_search_angle = 60; 
-default_no_samp_pts =  10; 
 default_max_length_factor = 1.75; 
 default_max_gradient = 10; 
 default_window = 0; 
@@ -61,7 +59,6 @@ addRequired(p, 'DEM')
 addRequired(p, 'R', validMapCellsRef)
 addOptional(p, 'search_step', default_search_step, validScalarPosNum)
 addOptional(p, 'search_angle', default_search_angle, validScalarPosNum)
-addOptional(p, 'no_samp_pts', default_no_samp_pts, validScalarPosNum)
 addOptional(p, 'max_length_factor', default_max_length_factor, validScalarPosNum)
 addOptional(p, 'max_gradient', default_max_gradient, validScalarPosNum)
 addOptional(p, 'window', default_window, validScalarPosNum)
@@ -70,7 +67,6 @@ parse(p, P_start, P_end, DEM, R, varargin{:});
 
 search_step = p.Results.search_step; 
 search_angle = p.Results.search_angle; 
-no_samp_pts = p.Results.no_samp_pts; 
 max_length_factor = p.Results.max_length_factor; 
 max_gradient = p.Results.max_gradient; 
 window = p.Results.window; 
@@ -82,14 +78,12 @@ max_recursions = p.Results.max_recursions;
 res = R.CellExtentInWorldX;        % resolution of DEM [m/pix]
 DEM_int = griddedInterpolant(DEM); % interpolant for our DEM
 
-% convert smoothing window from [m] to no. elements [-]
 % length of circular search segment [m]
 searchlen = (search_angle/360)*2*pi*search_step; 
-% step between pts on search segment [m]
-steppts = searchlen/no_samp_pts; 
+% no. of sampling pts on profile to roughly match DEM res [-]
+no_samp_pts = ceil(searchlen/res); 
 % no. of search segment pts in smoothing window [-]
-window = ceil(window/steppts);
-% idea: define samp_step [m] in config file instead?
+window = ceil(window/res);
 
 % stop criterion: 
 stop_dist = search_step; 

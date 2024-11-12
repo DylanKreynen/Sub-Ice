@@ -49,10 +49,9 @@ path_to_start_end_shp = '.\input\venable_start_end_4.shp';
 
 % centerline search parameters
 search_step = 1500;               % distance to step away from last known centerline point to construct search profile [m]
-no_cent_samp_pts = 20;            % number of sampling points on circular arc search profile [-]
-search_angle = 90;                % angle of view within to look for centerline [deg]
+search_angle = 85;                % angle of view within to look for centerline [deg]
 max_gradient = 2;                 % if new centerline point' elevation exceeds max. gradient, pick next best point instead [%]
-window_cent = 0;                  % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
+window_cent = 20;                 % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 max_recursions = 1;               % keep trying with slightly different search parameters in case channel end point is not found [-] (set to 0 or 1 for no recursion)
 % length of search segment = (search_angle/360)*2*pi*search_step
 
@@ -63,7 +62,7 @@ no_prof_samp_pts = 100;           % number of sampling points on profile [-]
 
 % channel edge parameters
 slope_thr = 0.25;                 % slope threshold for identifying edge [deg]
-window_edge = 500;                % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
+window_edge = 100;                % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 
 
 %% manage directories

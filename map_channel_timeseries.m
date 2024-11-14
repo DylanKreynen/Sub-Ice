@@ -39,7 +39,7 @@ run 'config.m'
 %% list DEMs/GeoTIFFs
 %  and corresponding dates
 
-if path_to_DEM(end-3:end) == '.tif'
+if path_to_DEM(end-3:end) == ".tif"
     error("path_to_DEM should point to a directory with DEMs, not a single DEM (check in config.m).")
 end
 
@@ -201,7 +201,7 @@ for t = 1:no_DEMs
     pause(0.01) % just to force matlab to plot
 
     % print fig to file
-    if save_figs == 1
+    if save_figs
         %f.WindowState = 'maximized'; % make figure fullscreen before saving
         fn = append(fig_dir, file_prefix, fchannel{t}); 
         print(fn, figs_filetype, figs_resolution)
@@ -215,7 +215,7 @@ disp("Finished mapping all timesteps! ")
 %% write shapefiles
 
 % write mapped geometries to shapefile
-if save_shps == 1
+if save_shps
 
     disp("Writing shapefiles... ")
 
@@ -247,7 +247,7 @@ if save_shps == 1
     end 
 end
 
-if save_figs == 1 || save_shps == 1
+if save_figs || save_shps
     disp(append("Done writing files. Check '", append(results_dir, proj_subdir), "' for output. "))
 end
 
@@ -255,7 +255,7 @@ end
 %% extended figures
 %  cross sectional profiles, metrics along channel length etc.
 
-if ext_figs == 1
+if ext_figs
 disp("Creating and possibly saving extended figures. Sit tight. ")
     
     for t = 1:no_DEMs
@@ -264,7 +264,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         no_profiles = size(profiles{t}, 2); 
         
         % for plotting profiles with [m] on x-axis
-        prof_dist_vector = [1:size(profiles{t}, 1)]*prof_samp_step; 
+        prof_dist_vector = (1:size(profiles{t}, 1))*res; 
         prof_dist_vector = prof_dist_vector - mean(prof_dist_vector); 
 
         % full cross sectional profiles using absolute elevation
@@ -279,7 +279,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         hcb = colorbar; 
         title(hcb, 'norm. dist. along channel [-]')
 
-        if save_figs == 1
+        if save_figs
             fn = append(fig_dir, file_prefix, fchannel{t}, '_full_profiles_elev'); 
             print(fn, figs_filetype, figs_resolution)
         end
@@ -307,14 +307,14 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         hcb = colorbar; 
         title(hcb, 'norm. dist. along profile [-]')
 
-        if save_figs == 1
+        if save_figs
             fn = append(fig_dir, file_prefix, fchannel{t}, '_lim_profiles_depth'); 
             print(fn, figs_filetype, figs_resolution)
         end
         
         
         % plotting some metrics along channel length
-        norm_dist_vector = [1:no_profiles]./no_profiles; 
+        norm_dist_vector = (1:no_profiles)./no_profiles; 
         
         figure(10)
         hold on
@@ -322,7 +322,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         
         trough_elev = min(profiles{t}); 
         trough_depth = min(profiles{t})-edge_elev{t}(:,1)'; 
-        channel_width = (edge_idx{t}(:,2)-edge_idx{t}(:,1))*prof_samp_step; % [m]
+        channel_width = (edge_idx{t}(:,2)-edge_idx{t}(:,1))*res; % [m]
 
         figure(11)
         hold on
@@ -339,7 +339,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
     title('mean profile elevation (full) vs. distance along channel')
     legend(fchannel)
     
-    if save_figs == 1
+    if save_figs
         fn = append(fig_dir, file_prefix, 'elev_vs_distance_along_channel'); 
         print(fn, figs_filetype, figs_resolution)
     end
@@ -351,7 +351,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
     title('channel depth vs. distance along channel')
     legend(fchannel)
     
-    if save_figs == 1
+    if save_figs
         fn = append(fig_dir, file_prefix, 'depth_vs_distance_along_channel'); 
         print(fn, figs_filetype, figs_resolution)
     end
@@ -363,7 +363,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
     title('channel width vs. distance along channel')
     legend(fchannel)
     
-    if save_figs == 1
+    if save_figs
         fn = append(fig_dir, file_prefix, 'width_vs_distance_along_channel'); 
         print(fn, figs_filetype, figs_resolution)
     end

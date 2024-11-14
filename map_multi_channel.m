@@ -39,7 +39,7 @@ run 'config.m'
 %% read DEM from GeoTIFF
 %  and smooth if required
 
-if path_to_DEM(end-3:end) ~= '.tif'
+if path_to_DEM(end-3:end) ~= ".tif"
     error("path_to_DEM should point to a single DEM .tif file (check in config.m). ")
 end
 
@@ -97,7 +97,7 @@ text_offs = 3;  % [pix]
 if start_end_method == 1 
     % click on start/end points 
     c = 0; 
-    while 1 == 1
+    while true
         c = c+1; 
         title(append("Left click on channel start and end points. Right click when done! "))
         disp(append("Left click on channel start and end points. Right click when done! "))
@@ -257,11 +257,11 @@ disp(append("Finished mapping. End point reached for ", string(sum(channel_statu
 
 %% write to files
 
-if save_figs == 1 || save_shps == 1
+if save_figs || save_shps
     disp("Writing figure- and shapefiles... ")
 
     % print overview figure to file
-    if save_figs == 1
+    if save_figs
         %f.WindowState = 'maximized'; % make figure fullscreen before saving
         fn = append(fig_dir, file_prefix, 'mapped_channels'); 
         print(fn, figs_filetype, figs_resolution)
@@ -269,7 +269,7 @@ if save_figs == 1 || save_shps == 1
     end
     
     % write mapped geometries to shapefile
-    if save_shps == 1
+    if save_shps
     
         % all centerlines in a single file
         fn = append(shp_dir, file_prefix, 'all_centerlines'); 
@@ -306,7 +306,7 @@ end
 %% extended figures
 %  cross sectional profiles, metrics along channel length etc.
 
-if ext_figs == 1
+if ext_figs
 disp("Creating and possibly saving extended figures. Sit tight. ")
     
     for c = 1:no_channels
@@ -315,7 +315,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         no_profiles = size(profiles{c}, 2); 
         
         % for plotting profiles with [m] on x-axis
-        prof_dist_vector = [1:size(profiles{c}, 1)]*prof_samp_step; 
+        prof_dist_vector = (1:size(profiles{c}, 1))*res; 
         prof_dist_vector = prof_dist_vector - mean(prof_dist_vector); 
 
         % full cross sectional profiles using absolute elevation
@@ -330,7 +330,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         hcb = colorbar; 
         title(hcb, 'norm. dist. along channel [-]')
 
-        if save_figs == 1
+        if save_figs
             fn = append(fig_dir, file_prefix, channel_label(c), '_full_profiles_elev'); 
             print(fn, figs_filetype, figs_resolution)
         end
@@ -358,14 +358,14 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         hcb = colorbar; 
         title(hcb, 'norm. dist. along profile [-]')
 
-        if save_figs == 1
+        if save_figs
             fn = append(fig_dir, file_prefix, channel_label(c), '_lim_profiles_depth'); 
             print(fn, figs_filetype, figs_resolution)
         end
         
         
         % plotting some metrics along channel length
-        norm_dist_vector = [1:no_profiles]./no_profiles; 
+        norm_dist_vector = (1:no_profiles)./no_profiles; 
         
         figure(10)
         hold on
@@ -373,7 +373,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         
         trough_elev = min(profiles{c}); % TO DO: min of profile not necessarily trough! could also be crack
         trough_depth = min(profiles{c})-edge_elev{c}(:,1)'; 
-        channel_width = (edge_idx{c}(:,2)-edge_idx{c}(:,1))*prof_samp_step; % [m]
+        channel_width = (edge_idx{c}(:,2)-edge_idx{c}(:,1))*res; % [m]
 
         figure(11)
         hold on
@@ -390,7 +390,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
     title('mean profile elevation (full) vs. distance along channel')
     legend(channel_label)
     
-    if save_figs == 1
+    if save_figs
         fn = append(fig_dir, file_prefix, 'elev_vs_distance_along_channel'); 
         print(fn, figs_filetype, figs_resolution)
     end
@@ -402,7 +402,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
     title('channel depth vs. distance along channel')
     legend(channel_label)
     
-    if save_figs == 1
+    if save_figs
         fn = append(fig_dir, file_prefix, 'depth_vs_distance_along_channel'); 
         print(fn, figs_filetype, figs_resolution)
     end
@@ -414,7 +414,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
     title('channel width vs. distance along channel')
     legend(channel_label)
     
-    if save_figs == 1
+    if save_figs
         fn = append(fig_dir, file_prefix, 'width_vs_distance_along_channel'); 
         print(fn, figs_filetype, figs_resolution)
     end

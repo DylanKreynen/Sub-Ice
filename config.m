@@ -46,11 +46,13 @@ start_end_method = 2;
 path_to_start_end_shp = '.\input\venable_start_end_4.shp'; 
 % ^ only needed when start_end_method is set to "2" (read from shapefile)
 % important: only works if shapefile has same map projection as DEM! 
+shelf_filter = ''; % no filtering: shelf_filter = ''; 
+% ^ optional: filter shapefile on "Shelf" field
 
 % centerline search parameters
 search_step = 1500;               % distance to step away from last known centerline point to construct search profile [m]
-search_angle = 85;                % angle of view within to look for centerline [deg]
-max_gradient = 2;                 % if new centerline point' elevation exceeds max. gradient, pick next best point instead [%]
+search_angle = 85;                % angle of view within to look for next centerline point [deg]
+max_gradient = 2;                 % if new centerline point's elevation exceeds max. gradient, pick next best point instead [%]
 window_cent = 20;                 % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
 max_recursions = 1;               % keep trying with slightly different search parameters in case channel end point is not found [-] (set to 0 or 1 for no recursion)
 % length of search segment = (search_angle/360)*2*pi*search_step

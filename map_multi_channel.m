@@ -137,7 +137,7 @@ elseif start_end_method == 2
     % only works if shapefile has same map projection as DEM!
     S = shaperead(path_to_start_end_shp); 
     % filter on "shelf" field
-    if ~isempty(shelf_filter) | shelf_filter ~= ""
+    if ~isempty(shelf_filter)
         S = S(strcmp({S.Shelf}, shelf_filter));
     end
     [x_startend, y_startend] =  worldToIntrinsic(R, vertcat(S.X), vertcat(S.Y));

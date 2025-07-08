@@ -58,11 +58,12 @@ max_recursions = 1;               % keep trying with slightly different search p
 % length of search segment = (search_angle/360)*2*pi*search_step
 
 % channel cross sectional profile parameters
-prof_length = 4000;               % length of cross sectional profiles [m]
+prof_length = 10000;              % length of cross sectional profiles [m]
 
 % channel edge parameters
-slope_thr = 0.25;                 % slope threshold for identifying edge [deg]
-window_edge = 100;                % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
+slope_thr = 0.00;                 % slope threshold for identifying edge [deg]
+sg_window = 1000;                 % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing, Savitzky-Golay filter)
+m_window = 6;                     % window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing, median filter)
 
 
 %% manage directories

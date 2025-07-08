@@ -172,8 +172,10 @@ for t = 1:no_DEMs
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines
-    window_edge = ceil(window_edge/res);        % from m to [pix]
-    [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges(profiles{t}, x_prof{t}, y_prof{t}, res, slope_thr, window_edge); 
+    [edge_idx{t}, edge_coord{t}, edge_elev{t}] = find_edges(profiles{t}, x_prof{t}, y_prof{t}, res, ...
+                                                'slope_thr',        slope_thr, ...
+                                                'sg_window',        sg_window, ...
+                                                'm_window',         m_window); 
     
     % label for shapefile
     fchannel{t} = string(dates(t)); 

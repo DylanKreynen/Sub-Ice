@@ -19,6 +19,7 @@ For now, please refer to comments in the code for details!
 1. Clone this GitHub repository to create a local copy of the code on your computer (or download and unzip). 
 2. Update the user specifiable parameters in *config.m* as required. 
 3. Run *map_multi_channel.m* using a recent version of Matlab (code tested in R2024a). 
+
 That's it! All data required to map your first basal channels is already included. 
 
 
@@ -41,11 +42,11 @@ That's it! All data required to map your first basal channels is already include
 
 \
 **Sub-Ice**: **Su**rface-**b**ased **I**ce Shelf **C**hannel **E**xtraction  
-version as of 2024-11-11 (tested using R2024a)
+version as of 2025-07-08 (tested using R2024a)
 
 &copy; [Dylan Kreynen](https://www.mn.uio.no/geo/english/people/aca/geohyd/kreynen/)  
 University of Oslo  
-2024
+2024-2025
 
 originally a project at the International Summer School in Glaciology\
 project team members: Marcelo Santis & Dylan Kreynen\

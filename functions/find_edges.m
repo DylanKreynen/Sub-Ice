@@ -128,7 +128,7 @@ for i = 1:no_profs
     end
     % note: should we only smooth for slope threshold method, or also knee?
 
-    if edge_metod == "SlopeThreshold"
+    if edge_method == "SlopeThreshold"
         % derivative to find slope
         slope = gradient(prof, samp_step);  % slope in [rad]
         
@@ -163,14 +163,14 @@ for i = 1:no_profs
     elseif edge_method == "KneePoint"
         % right channel edge
         rprof = prof(1:no_pts-min_width); 
-        rprof = prof(1:no_pts); 
+        % rprof = prof(1:no_pts); 
         [~, idx] = knee_pt(rprof); 
         redge_idx(i) = idx;
 
         % left channel edge
         lprof = flip(prof); 
         lprof = lprof(1:no_pts-min_width);
-        lprof = lprof(1:no_pts);
+        % lprof = lprof(1:no_pts);
         [~, idx] = knee_pt(lprof); 
 
         % profile was flipped! correcting for that:

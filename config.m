@@ -18,19 +18,19 @@
 %  (update as required)
 
 % ice shelf DEM (should be GeoTIFF)
-path_to_DEM = '.\input\venable.tif'; % to a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries.m
+path_to_DEM = './input/venable.tif'; % to a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries.m
 DEM_nodata = -9999;         % DEM no data value
 window_DEM = 0;             % window size for DEM smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
                             % only works with map_multi_channel.m variations (TO DO: implement in map_channel_timeseries.m)
 
 % output behaviour: 
-results_dir = '.\output\';
-proj_subdir = 'venable\'; 
-fig_subdir = 'fig\'; 
-shp_subdir = 'shp\'; 
+results_dir = './output/';
+proj_subdir = 'venable/'; 
+fig_subdir = 'fig/'; 
+shp_subdir = 'shp/'; 
 file_prefix = 'default_';   % (optional)
 % output path will be constructed as follows: 
-% results_dir\proj_subdir\fig_subdir\file_prefix_....ext
+% results_dir/proj_subdir/fig_subdir/file_prefix_....ext
 
 save_figs = 0;              % print figures to disk Y/N
 figs_filetype = '-dpng';    % for use with "print()"
@@ -43,7 +43,7 @@ start_end_method = 2;
 % 1 = click on start/end points
 % 2 = read from shapefile
 % 3 = manually enter in script
-path_to_start_end_shp = '.\input\venable_start_end_4.shp'; 
+path_to_start_end_shp = './input/venable_start_end_4.shp'; 
 % ^ only needed when start_end_method is set to "2" (read from shapefile)
 % important: only works if shapefile has same map projection as DEM! 
 shelf_filter = ''; % no filtering: shelf_filter = ''; 

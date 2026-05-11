@@ -26,6 +26,8 @@ function [edge_idx, edge_coord, edge_elev, alongprof] = find_edges(profiles, x_p
 % min_width = minimum channel width (edge must be half min. width away from center line) [m] (default: 500m)
 % sg_window = window size for profile smoothing [m] (will be rounded, set to 0 for no smoothing)
 % m_window = window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing)
+% edge_buff = minimum distance from the channels minimum width to ensure enough data for edge detection [m] (default: 100m)
+% peak_prom = how prominent the first peak should be detected as compared to surrounding peaks [m] (default: 0.1m)
 %
 % output: 
 % edge_idx = matrix containing profile indices corr. to channel edges [-]
@@ -53,12 +55,15 @@ default_slope_thr = 0;
 default_min_width = 500; 
 default_sg_window = 0; 
 default_m_window = 0; 
-default_edge_method = "KneePoint"; 
+default_edge_method = "KneePoint";
+default_edge_buff = 100;
+default_peak_prom = 0.1;
 
 % parse input arguments
 p = inputParser; 
 validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
-validEdgeMethod = @(x) convertCharsToStrings(x)=="SlopeThreshold" | convertCharsToStrings(x)=="KneePoint"; 
+validEdgeMethod = @(x) convertCharsToStrings(x)=="SlopeThreshold" | convertCharsToStrings(x)=="KneePoint";
+validEdgeBuff = @(x) isnumeric(x) && isscalar(x) && (x >= 1);
 addRequired(p, 'profiles')
 addRequired(p, 'x_prof')
 addRequired(p, 'y_prof')
@@ -68,13 +73,17 @@ addOptional(p, 'min_width', default_min_width, validScalarPosNum)
 addOptional(p, 'sg_window', default_sg_window, validScalarPosNum)
 addOptional(p, 'm_window', default_m_window, validScalarPosNum)
 addOptional(p, 'edge_method', default_edge_method, validEdgeMethod)
+addOptional(p, 'edge_buff', default_edge_buff, validEdgeBuff)
+addOptional(p, 'peak_prom', default_peak_prom, validScalarPosNum)
 parse(p, profiles, x_prof, y_prof, res, varargin{:}); 
 
 slope_thr = p.Results.slope_thr; 
 min_width = p.Results.min_width; 
 sg_window = p.Results.sg_window; 
 m_window = p.Results.m_window; 
-edge_method = convertCharsToStrings(p.Results.edge_method); 
+edge_method = convertCharsToStrings(p.Results.edge_method);
+edge_buff = p.Results.edge_buff;
+peak_prom = p.Results.peak_prom;
 
 
 %% actual function
@@ -93,6 +102,11 @@ sg_window = ceil(sg_window/samp_step);  % from [m] yo [-] (index)
 if sg_window ~= 0 && mod(sg_window,2) == 0
     % make window odd
     sg_window = sg_window + 1; 
+end
+
+edge_buff = int32(edge_buff/samp_step);  % from [m] to [-] (index)
+if edge_buff < 1
+    error("edge_buff too small (<1) for knee point function data. Check paramaters such that edge_buff is large enough.")
 end
 
 ledge_idx = NaN(no_profs, 1);    % left edge index ("upper" edge in previous versions)
@@ -161,20 +175,47 @@ for i = 1:no_profs
         ledge_idx(i) = idx; 
 
     elseif edge_method == "KneePoint"
+        % override to use the original knee point detection behavior
+        % TO DO: currently controlled here would be better as 
+        % TO DO: 
+        knee_default = false;
+
+
         % right channel edge
-        rprof = prof(1:no_pts-min_width); 
-        % rprof = prof(1:no_pts); 
-        [~, idx] = knee_pt(rprof); 
-        redge_idx(i) = idx;
+        rprof = prof(1:no_pts-min_width);
+        
+
+        % find the peaks along the right channel edge
+        [~, pk] = findpeaks(-rprof, MinPeakProminence=peak_prom);
+
+        if isempty(pk) || knee_default             % if no peaks are found
+            [~, idx] = knee_pt(rprof);             % use the entire edge
+            redge_idx(i) = idx;
+        else
+            pos = int32(pk(end-1)-edge_buff);
+            [~, idx] = knee_pt(rprof(pos:end));      % find the knee point between the channel and it's first peak
+            redge_idx(i) = idx+pos;
+        end 
 
         % left channel edge
         lprof = flip(prof); 
         lprof = lprof(1:no_pts-min_width);
-        % lprof = lprof(1:no_pts);
-        [~, idx] = knee_pt(lprof); 
+        % find the peaks along the left channel edge
+        [~, pk] = findpeaks(-lprof, MinPeakProminence=peak_prom);
+        
 
-        % profile was flipped! correcting for that:
-        idx = prof_length+1 - idx; 
+        if isempty(pk) || knee_default              % if no peaks are found
+            [~, idx] = knee_pt(lprof);              % use the entire edge
+       
+            idx = prof_length+1 - idx;              % profile was flipped! correcting for that:
+        else
+            pos = int32(pk(end-1)-edge_buff);
+            [~, idx] = knee_pt(lprof(pos:end));
+        
+            % profile was flipped! correcting for that:
+            idx = prof_length+1 - (idx+pos); 
+        end 
+
         ledge_idx(i) = idx; 
 
     else

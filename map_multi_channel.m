@@ -234,9 +234,9 @@ for c = 1:no_channels
 
     % find channel edges/outlines
     [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, res, ...
-                                                'slope_thr',        slope_thr, ...
-                                                'sg_window',        sg_window, ...
-                                                'm_window',         m_window); 
+                                                'edge_method',      'KneePoint', ...
+                                                'm_window',         m_window, ...
+                                                'min_width',        min_width); 
     
     % vizualise
     % centerlines
@@ -322,10 +322,14 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         
         % for plotting profiles with [m] on x-axis
         prof_dist_vector = (1:size(profiles{c}, 1))*res; 
-        prof_dist_vector = prof_dist_vector - mean(prof_dist_vector); 
+        prof_dist_vector = prof_dist_vector - mean(prof_dist_vector);
+        ledge_pos = prof_dist_vector(edge_idx{c}(:, 1)');
+        redge_pos = prof_dist_vector(edge_idx{c}(:, 2)');
+        edge_pos_vector = [ledge_pos(:), redge_pos(:)];
 
         % full cross sectional profiles using absolute elevation
         figure
+        hold on
         plot(prof_dist_vector, profiles{c}, 'LineWidth', 3)
         xlabel('distance from profile center [m]')
         ylabel('elevation [m]')
@@ -335,6 +339,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         set(gca(), 'ColorOrder', cmap)
         hcb = colorbar; 
         title(hcb, 'norm. dist. along channel [-]')
+        plot(edge_pos_vector, edge_elev{c}, '.', 'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'r', 'MarkerSize', 15)
 
         if save_figs
             fn = append(fig_dir, file_prefix, channel_label(c), '_full_profiles_elev'); 
@@ -379,7 +384,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         
         trough_elev = min(profiles{c}); % TO DO: min of profile not necessarily trough! could also be crack
         trough_depth = min(profiles{c})-edge_elev{c}(:,1)'; 
-        channel_width = (edge_idx{c}(:,2)-edge_idx{c}(:,1))*res; % [m]
+        channel_width = (edge_idx{c}(:,1)-edge_idx{c}(:,2))*res; % [m]
 
         figure(11)
         hold on

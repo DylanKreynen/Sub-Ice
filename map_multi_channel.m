@@ -202,7 +202,9 @@ y_prof = cell(no_channels, 1);
 edge_idx = cell(no_channels, 1); 
 edge_coord = cell(no_channels, 1); 
 edge_elev = cell(no_channels, 1); 
-fchannel = cell(no_channels, 1); 
+fchannel = cell(no_channels, 1);
+
+thresh_idx = cell(no_channels, 1); % TEST
 
 % to store whether we successfully found the channel centerline: 
 channel_status = zeros(no_channels, 1); 
@@ -236,7 +238,8 @@ for c = 1:no_channels
     [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, res, ...
                                                 'edge_method',      'KneePoint', ...
                                                 'm_window',         m_window, ...
-                                                'min_width',        min_width); 
+                                                'min_width',        min_width, ...
+                                                'max_width',        max_width); 
     
     % vizualise
     % centerlines
@@ -339,7 +342,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         set(gca(), 'ColorOrder', cmap)
         hcb = colorbar; 
         title(hcb, 'norm. dist. along channel [-]')
-        plot(edge_pos_vector, edge_elev{c}, '.', 'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'r', 'MarkerSize', 15)
+        plot(edge_pos_vector, edge_elev{c}, 'o', 'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'g', 'MarkerSize', 7)
 
         if save_figs
             fn = append(fig_dir, file_prefix, channel_label(c), '_full_profiles_elev'); 
@@ -355,7 +358,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
             % replace values outside of channel edges to NaN
             prof(1:edge_idx{c}(i,2)) = NaN;
             prof(edge_idx{c}(i,1):end) = NaN; 
-
+            
             % from absolute height to depth below left channel edge
             prof = prof - edge_elev{c}(i,1); 
 

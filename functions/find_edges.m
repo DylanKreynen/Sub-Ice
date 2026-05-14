@@ -89,6 +89,10 @@ sg_window = p.Results.sg_window;
 m_window = p.Results.m_window; 
 edge_method = convertCharsToStrings(p.Results.edge_method);
 
+% check to ensure min_width is smaller than max_width
+if min_width >= max_width
+    error("Invalid min_width. Exceeds the value of max_width. Check your config and set min_width less than the value of max_width.")
+end 
 
 %% actual function
 

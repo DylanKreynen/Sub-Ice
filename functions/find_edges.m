@@ -28,8 +28,8 @@ function [edge_idx, edge_coord, edge_elev, alongprof] = find_edges(profiles, x_p
 % optional input: 
 % edge_method = method to use to find channel edges (default "SlopeThreshold" alternatively "KneePoint")
 % slope_thr = slope threshold for identifying channel edge [deg] (default: 0 deg)
-% min_width = minimum channel width (edge must be half min. width away from center line) [m] (default: 500m)
-% max_width = maximum distance from the channels minimum width to ensure enough data for edge detection [m] (default: 3000m)
+% min_width = minimum channel width (edge must be half min. width away from center line) [m] (default: 500m), can also be sent as a 2 length vector for the right and left widths (format: left, right)
+% max_width = maximum distance from the channels minimum width to ensure enough data for edge detection [m] (default: 3000m), can also be sent in as 2 length vector for the right and left widths (format: left, right)
 % peak_prom = how prominent the first peak should be detected as compared to surrounding peaks [m] (default: 1m)
 % sg_window = window size for profile smoothing [m] (will be rounded, set to 0 for no smoothing)
 % m_window = window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing)

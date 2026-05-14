@@ -67,14 +67,15 @@ default_edge_method = "KneePoint";
 % parse input arguments
 p = inputParser; 
 validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
+validMaxMinWidths = @(x) (isvector(x) && all(x(:) >= 0) && length(x) == 2) || (isnumeric(x) && isscalar(x) && (x >= 0));
 validEdgeMethod = @(x) convertCharsToStrings(x)=="SlopeThreshold" | convertCharsToStrings(x)=="KneePoint";
 addRequired(p, 'profiles')
 addRequired(p, 'x_prof')
 addRequired(p, 'y_prof')
 addRequired(p, 'res', validScalarPosNum)
 addOptional(p, 'slope_thr', default_slope_thr, validScalarPosNum)
-addOptional(p, 'min_width', default_min_width, validScalarPosNum)
-addOptional(p, 'max_width', default_max_width, validScalarPosNum)
+addOptional(p, 'min_width', default_min_width, validMaxMinWidths)
+addOptional(p, 'max_width', default_max_width, validMaxMinWidths)
 addOptional(p, 'peak_prom', default_peak_prom, validScalarPosNum)
 addOptional(p, 'sg_window', default_sg_window, validScalarPosNum)
 addOptional(p, 'm_window', default_m_window, validScalarPosNum)
@@ -89,10 +90,6 @@ sg_window = p.Results.sg_window;
 m_window = p.Results.m_window; 
 edge_method = convertCharsToStrings(p.Results.edge_method);
 
-% check to ensure min_width is smaller than max_width
-if min_width >= max_width
-    error("Invalid min_width. Exceeds the value of max_width. Check your config and set min_width less than the value of max_width.")
-end 
 
 %% actual function
 
@@ -102,10 +99,27 @@ samp_step = sqrt((x_prof(1,1)-x_prof(2,1))^2 + (y_prof(1,1)-y_prof(2,1))^2); % [
 samp_step = samp_step*res;       % distance between sampling points, now in [m]
 
 % channel edge should be at least this distance away from channel centerline
-min_width = min_width/samp_step;    % from [m] to [-] (index)
-min_width = ceil(min_width/2);      % half-distance
-max_width = max_width/samp_step;    % from [m] to [-] (index)
-max_width = ceil(max_width/2);      % half-distance
+
+
+if ~isscalar(max_width)
+    lmax_width = ceil(max_width(1)/samp_step);
+    rmax_width = ceil(max_width(2)/samp_step);
+else
+    max_width = max_width/samp_step;    % from [m] to [-] (index)
+    max_width = ceil(max_width/2);      % half-distance
+    lmax_width = max_width;
+    rmax_width = max_width;
+end
+
+if ~isscalar(min_width)
+    lmin_width = ceil(min_width(1)/samp_step);
+    rmin_width = ceil(min_width(2)/samp_step);
+else
+    min_width = min_width/samp_step;    % from [m] to [-] (index)
+    min_width = ceil(min_width/2);      % half-distance
+    lmin_width = min_width;
+    rmin_width = min_width;
+end
 
 slope_thr = deg2rad(slope_thr);         % from [deg] to [rad]
 sg_window = ceil(sg_window/samp_step);  % from [m] yo [-] (index)
@@ -184,13 +198,14 @@ for i = 1:no_profs
         ledge_idx(i) = idx; 
 
     elseif edge_method == "KneePoint"
-        out_th = no_pts-max_width;      % index of outer threshold
 
         % right channel edge
-        rprof = prof(1:no_pts-min_width);
+        out_th = no_pts-rmax_width;      % index of outer threshold
+
+        rprof = prof(1:no_pts-rmin_width);
 
         % find the peaks along the right channel edge
-        [~, pk] = findpeaks(rprof((no_pts-max_width):end), MinPeakProminence=peak_prom);
+        [~, pk] = findpeaks(rprof((no_pts-rmax_width):end), MinPeakProminence=peak_prom);
 
         if isempty(pk)                                  % if no peaks are found
             [~, idx] = knee_pt(rprof(out_th:end));      % find the knee point in the search area
@@ -203,8 +218,10 @@ for i = 1:no_profs
         end 
 
         % left channel edge
+        out_th = no_pts-lmax_width;      % index of outer threshold
+        
         lprof = flip(prof); 
-        lprof = lprof(1:no_pts-min_width);
+        lprof = lprof(1:no_pts-lmin_width);
 
         % find the peaks along the left channel edge
         [~, pk] = findpeaks(lprof(out_th:end), MinPeakProminence=peak_prom);

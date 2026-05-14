@@ -232,7 +232,7 @@ if m_window ~= 0
     ledge_idx_filt = ceil(medfilt1(ledge_idx, m_window, [], 1, 'truncate')); 
     redge_idx_filt = ceil(medfilt1(redge_idx, m_window, [], 1, 'truncate'));
 
-    if keep_pk
+    if keep_pk          % preserve the peaks position from smoothing by resetting them back
         for i =1:no_profs
             if ~ledge_sm(i)
                 ledge_idx_filt(i) = ledge_idx(i);

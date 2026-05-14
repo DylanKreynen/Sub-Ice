@@ -64,6 +64,9 @@ prof_length = 10000;              % length of cross sectional profiles [m]
 slope_thr = 0.00;                 % slope threshold for identifying edge [deg]
 sg_window = 1000;                 % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing, Savitzky-Golay filter)
 m_window = 6;                     % window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing, median filter)
+min_width = 600;                  % the minimum width [m] of the channel where the algorithm should ignore
+max_width = 3000;                 % the maximum width [m] of the area to conduct knee point or peak detection around the channel
+peak_prom = 0.5;                  % the minimum amount of prominence [m] from around surrounding peaks
 
 
 %% manage directories

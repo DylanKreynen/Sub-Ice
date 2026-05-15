@@ -6,7 +6,7 @@
 % 
 %  (c) Dylan Kreynen
 %  University of Oslo
-%  2024
+%  2024-2026
 % 
 %  originally a project at the Int. Summer School in Glaciology
 %  project team members: Marcelo Santis & Dylan Kreynen
@@ -58,7 +58,9 @@ max_recursions = 1;               % keep trying with slightly different search p
 % length of search segment = (search_angle/360)*2*pi*search_step
 
 % channel cross sectional profile parameters
-prof_length = 10000;              % length of cross sectional profiles [m]
+prof_length   = 10000;            % length of cross sectional profiles [m]
+prof_interval = 0;                % spacing between profiles along centerline [m]
+                                  % (0 = one profile per centerline search segment)
 
 % channel edge parameters
 slope_thr = 0.00;                 % slope threshold for identifying edge [deg]

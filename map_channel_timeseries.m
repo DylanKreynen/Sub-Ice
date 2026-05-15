@@ -20,7 +20,7 @@ clc
 % 
 %  (c) Dylan Kreynen
 %  University of Oslo
-%  2024
+%  2024-2026
 % 
 %  originally a project at the Int. Summer School in Glaciology
 %  project team members: Marcelo Santis & Dylan Kreynen
@@ -168,7 +168,8 @@ for t = 1:no_DEMs
 
     % find cross sectional profiles
     [profiles{t}, x_prof{t}, y_prof{t}] = find_profiles(x_cent{t}, y_cent{t}, DEM, R, ...
-                                                'prof_length',      prof_length); 
+                                                'prof_length',      prof_length, ...
+                                                'prof_interval',    prof_interval);
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines

@@ -1,5 +1,5 @@
 function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, varargin) 
-%[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, search_angle, max_gradient, window, max_length_factor, max_recursions)
+%[x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R, search_step, search_angle, max_gradient, window, max_length_factor, max_recursions, center_method)
 %Returns the coordinates of the channel centerline. 
 % basic idea: 
 % - find direction (based on start/end points or previous centerline points)
@@ -27,6 +27,7 @@ function [x_cent, y_cent, cent_length] = find_centerline(P_start, P_end, DEM, R,
 % max_length_factor = controls when to stop looking for channel end point [-] (default: 1.75)
 %                     max. channel length = (max_length_factor)*(distance between start and end point)
 % max_recursions = max. no. of attempts with updated search parameters [-] (set to 1 for no recursion) (default = 1)
+% center_method = method to use to find next channel center line point (default "MinLocation" alternatively "MinValue")
 %
 % output:
 % x_cent = vector with x coordinates of channel centerline [pix]
@@ -47,12 +48,14 @@ default_max_length_factor = 1.75;
 default_max_gradient = 10; 
 default_window = 0; 
 default_max_recursions = 1; 
+default_center_method = "MinLocation"; 
 
 % parse input arguments
 p = inputParser; 
 validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
 validMapCellsRef = @(x) class(x) == "map.rasterref.MapCellsReference"; 
 validPStartEnd = @(x) (size(x, 1)==2 | size(x, 2)==2) && isnumeric(x(1)) && isscalar(x(1)); 
+validCenterMethod = @(x) convertCharsToStrings(x)=="MinLocation" | convertCharsToStrings(x)=="MinValue"; 
 addRequired(p, 'P_start', validPStartEnd)
 addRequired(p, 'P_end', validPStartEnd)
 addRequired(p, 'DEM')
@@ -63,6 +66,7 @@ addOptional(p, 'max_length_factor', default_max_length_factor, validScalarPosNum
 addOptional(p, 'max_gradient', default_max_gradient, validScalarPosNum)
 addOptional(p, 'window', default_window, validScalarPosNum)
 addOptional(p, 'max_recursions', default_max_recursions, validScalarPosNum)
+addOptional(p, 'center_method', default_center_method, validCenterMethod)
 parse(p, P_start, P_end, DEM, R, varargin{:}); 
 
 search_step = p.Results.search_step; 
@@ -71,6 +75,7 @@ max_length_factor = p.Results.max_length_factor;
 max_gradient = p.Results.max_gradient; 
 window = p.Results.window; 
 max_recursions = p.Results.max_recursions; 
+center_method = p.Results.center_method; 
 
 
 %% actual function
@@ -134,7 +139,7 @@ middle_weights = [1:no_pts, no_pts+1, abs(-no_pts:-1)];
 % ^ vector with weights - higher closer to middle of profile
 i = 2; 
 dist_to_end = stop_dist + 1; 
-while dist_to_end > stop_dist % give condition here (distance to end point)
+while dist_to_end > stop_dist % while we are far from end point, find next centerline point
     i = i + 1; 
     if i > max_no_cent_pts-1
         %disp("Warning: did not reach channel end (exceeded max. centerline length). ")
@@ -161,10 +166,6 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     % indeed along the centerline we should not have big bumps in it. If
     % it's a crack, there's likely "a big hill" on the profile (or a steep one)
 
-    % idea: if we don't end up and the channel's predefined end point, we
-    % could try to find it by reversing the start and end points (i.e. look
-    % for the start point, given the end point). one more shot
-
     % similarly: if we don't reach the channel's end point, we could go
     % back to the step where there were multiple centerline options
     % (multiple minima) and go for the next best one and try again
@@ -179,10 +180,29 @@ while dist_to_end > stop_dist % give condition here (distance to end point)
     local_min_loc = islocalmin(prof); % logical
 
     while any(local_min_loc)   % while we have valid local minima
-        % select local min closest to center of search profile
-        local_min_loc = local_min_loc.*middle_weights; 
-        [~, min_loc] = max(local_min_loc); 
-        min_val_upd = prof(min_loc); 
+
+        local_min_val = double(local_min_loc); 
+        local_min_val(local_min_val==0) = NaN; 
+        local_min_val = local_min_val.*prof; % elevations
+
+        if center_method == "MinLocation"
+            % select local min closest to center of search profile (using weights)
+            local_min_loc = local_min_loc.*middle_weights; 
+            [~, min_loc] = max(local_min_loc); 
+            min_val_upd = prof(min_loc); 
+
+        elseif center_method == "MinValue"
+            % select local min with lowest absolute elevation
+            [~, min_loc] = min(local_min_val);
+            min_val_upd = prof(min_loc); 
+
+        %elseif center_method == "MinHybrid"
+            % select local min based on both location and absolute elevation
+            % TO DO: implement hybrid method
+
+        else
+            error("Invalid center_method. Check find_centerline() parameters, set center_method to 'MinLocation' or 'MinValue'.")
+        end
 
         % check for depth wrt previous centerline point threshold
         if (min_val - min_val_upd) > max_diff_elev

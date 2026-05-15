@@ -14,7 +14,7 @@ function [edge_idx, edge_coord, edge_elev, alongprof] = find_edges(profiles, x_p
 % median filter (applicable to all methods). This version of this function 
 % also outputs "along profiles" for output figures (work in progress).  
 %
-% Knee point method is restricted to look within the minimum channel width
+% Near Peaks method is restricted to look within the minimum channel width
 % and the maximum channel width. It detects if there are significant peaks
 % within the area, and selects the closest peak to the channel. Otherwise
 % it finds the knee point within the area.
@@ -68,7 +68,7 @@ default_edge_method = "KneePoint";
 p = inputParser; 
 validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
 validMaxMinWidths = @(x) (isvector(x) && all(x(:) >= 0) && length(x) == 2) || (isnumeric(x) && isscalar(x) && (x >= 0));
-validEdgeMethod = @(x) convertCharsToStrings(x)=="SlopeThreshold" | convertCharsToStrings(x)=="KneePoint";
+validEdgeMethod = @(x) convertCharsToStrings(x)=="SlopeThreshold" | convertCharsToStrings(x)=="KneePoint" | convertCharsToStrings(x)=="NearPeaks";
 addRequired(p, 'profiles')
 addRequired(p, 'x_prof')
 addRequired(p, 'y_prof')
@@ -196,8 +196,24 @@ for i = 1:no_profs
         % profile slope was flipped! correcting for that:
         idx = prof_length+1 - idx; 
         ledge_idx(i) = idx; 
-
     elseif edge_method == "KneePoint"
+        % right channel edge
+        rprof = prof(1:no_pts-min_width); 
+        % rprof = prof(1:no_pts); 
+        [~, idx] = knee_pt(rprof); 
+        redge_idx(i) = idx;
+
+        % left channel edge
+        lprof = flip(prof); 
+        lprof = lprof(1:no_pts-min_width);
+        % lprof = lprof(1:no_pts);
+        [~, idx] = knee_pt(lprof); 
+
+        % profile was flipped! correcting for that:
+        idx = prof_length+1 - idx; 
+        ledge_idx(i) = idx; 
+
+    elseif edge_method == "NearPeaks"
 
         % right channel edge
         out_th = no_pts-rmax_width;      % index of outer threshold

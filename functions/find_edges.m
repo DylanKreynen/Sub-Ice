@@ -33,6 +33,7 @@ function [edge_idx, edge_coord, edge_elev, alongprof] = find_edges(profiles, x_p
 % peak_prom = how prominent the first peak should be detected as compared to surrounding peaks [m] (default: 1m)
 % sg_window = window size for profile smoothing [m] (will be rounded, set to 0 for no smoothing)
 % m_window = window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing)
+% keep_peaks = override to allow the preservation of edge peaks position even with smoothing of the edges
 %
 % output: 
 % edge_idx = matrix containing profile indices corr. to channel edges [-]
@@ -63,10 +64,12 @@ default_peak_prom = 1;
 default_sg_window = 0; 
 default_m_window = 0; 
 default_edge_method = "KneePoint";
+default_keep_pks = false;
 
 % parse input arguments
 p = inputParser; 
 validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
+vaildLogicalVal = @(x) islogical(x);
 validMaxMinWidths = @(x) (isvector(x) && all(x(:) >= 0) && length(x) == 2) || (isnumeric(x) && isscalar(x) && (x >= 0));
 validEdgeMethod = @(x) convertCharsToStrings(x)=="SlopeThreshold" | convertCharsToStrings(x)=="KneePoint" | convertCharsToStrings(x)=="NearPeaks";
 addRequired(p, 'profiles')
@@ -80,6 +83,7 @@ addOptional(p, 'peak_prom', default_peak_prom, validScalarPosNum)
 addOptional(p, 'sg_window', default_sg_window, validScalarPosNum)
 addOptional(p, 'm_window', default_m_window, validScalarPosNum)
 addOptional(p, 'edge_method', default_edge_method, validEdgeMethod)
+addOptional(p, 'keep_pks', default_keep_pks, vaildLogicalVal)
 parse(p, profiles, x_prof, y_prof, res, varargin{:}); 
 
 slope_thr = p.Results.slope_thr; 
@@ -89,6 +93,7 @@ peak_prom = p.Results.peak_prom;
 sg_window = p.Results.sg_window; 
 m_window = p.Results.m_window; 
 edge_method = convertCharsToStrings(p.Results.edge_method);
+keep_pks = p.Results.keep_pks;
 
 
 %% actual function
@@ -260,12 +265,11 @@ end
 
 
 % smooth edges using median filter (if window ~= 0) 
-keep_pk = true;         % override to ignore preserving the peaks in the smoothing
 if m_window ~= 0
     ledge_idx_filt = ceil(medfilt1(ledge_idx, m_window, [], 1, 'truncate')); 
     redge_idx_filt = ceil(medfilt1(redge_idx, m_window, [], 1, 'truncate'));
 
-    if keep_pk          % preserve the peaks position from smoothing by resetting them back
+    if keep_pks          % preserve the peaks position from smoothing by resetting them back
         for i =1:no_profs
             if ~ledge_sm(i)
                 ledge_idx_filt(i) = ledge_idx(i);

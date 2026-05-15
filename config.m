@@ -69,7 +69,7 @@ m_window = 6;                     % window size for edge smoothing [-] (no. of p
 min_width = 600;                  % the minimum width [m] of the channel where the algorithm should ignore
 max_width = 3000;                 % the maximum width [m] of the area to conduct knee point or peak detection around the channel
 peak_prom = 0.5;                  % the minimum amount of prominence [m] from around surrounding peaks
-
+keep_pks = false;                 % override to keep the peaks positions in the cross sections when smoothing using m_window
 
 %% manage directories
 %  (no need to update)

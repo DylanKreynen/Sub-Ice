@@ -1,4 +1,32 @@
-input/*/
-output/*/
-**/.DS_Store
-**/*.asv
+# Ignore everything
+*
+
+# Un-ignore tracked files
+!.gitignore
+!README.md
+!config.m
+!functions/
+!functions/centerline_query_pts.m
+!functions/find_centerline.m
+!functions/find_edges.m
+!functions/find_profiles.m
+!functions/knee_pt.m
+!functions/lines_to_shp.m
+!functions/profile_query_pts.m
+!input/
+!input/venable.tif
+!input/venable.tif_credit.txt
+!input/venable_start_end_4.cpg
+!input/venable_start_end_4.dbf
+!input/venable_start_end_4.prj
+!input/venable_start_end_4.shp
+!input/venable_start_end_4.shx
+!input/venable_start_end_timeseries.cpg
+!input/venable_start_end_timeseries.dbf
+!input/venable_start_end_timeseries.prj
+!input/venable_start_end_timeseries.shp
+!input/venable_start_end_timeseries.shx
+!map_channel_timeseries.m
+!map_multi_channel.m
+!output/
+!output/fig_readme.png

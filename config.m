@@ -35,7 +35,7 @@ file_prefix = 'default_';   % (optional)
 save_figs = 0;              % print figures to disk Y/N
 figs_filetype = '-dpng';    % for use with "print()"
 figs_resolution = '-r500';  % for use with "print()"
-ext_figs = 0;               % plot (and print) extended figures Y/N
+ext_figs = 1;               % plot (and print) extended figures Y/N
 save_shps = 0;              % save output as shapefiles Y/N
 
 % select method to specify channel start/end points
@@ -61,15 +61,17 @@ max_recursions = 1;               % keep trying with slightly different search p
 prof_length   = 10000;            % length of cross sectional profiles [m]
 prof_interval = 0;                % spacing between profiles along centerline [m]
                                   % (0 = one profile per centerline search segment)
-
 % channel edge parameters
-slope_thr = 0.00;                 % slope threshold for identifying edge [deg]
+edge_method = "KneePoint";        % method to use to identify channel edges ("SlopeThreshold", "KneePoint" or "NearPeaks")
+min_width = 500;                  % minimum channel width [m] (set to 0 for no minimum width)
+max_width = 0;                    % maximum channel width [m] (set to 0 for maximum width = prof_length)
 sg_window = 1000;                 % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing, Savitzky-Golay filter)
 m_window = 6;                     % window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing, median filter)
-min_width = 600;                  % the minimum width [m] of the channel where the algorithm should ignore
-max_width = 3000;                 % the maximum width [m] of the area to conduct knee point or peak detection around the channel
-peak_prom = 0.5;                  % the minimum amount of prominence [m] from around surrounding peaks
-keep_pks = false;                 % override to keep the peaks positions in the cross sections when smoothing using m_window
+
+slope_thr = 0.00;                 % slope threshold for identifying edge [deg] (only used when edge_method = "SlopeThreshold")
+peak_prom = 0.5;                  % MinPeakProm for findpeaks() [m], minimum prominence for channel edge (only used when edge_method = "NearPeaks")
+keep_pks = 0;                     % prevent peaks from being adjusted by along-channel edge smoothing (0 or 1, only used when edge_method = "NearPeaks")
+
 
 %% manage directories
 %  (no need to update)

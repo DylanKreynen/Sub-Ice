@@ -72,7 +72,7 @@ default_keep_pks = false;
 
 % parse input arguments
 p = inputParser; 
-validScalarPosNum = @(x) isnumeric(x) && isscalar(x) && (x >= 0);
+validScalarPosNum = @(x) isnumeric(x) && isscalar(x); % && (x >= 0);
 validMaxMinWidths = @(x) (isvector(x) && all(x(:) >= 0) && length(x) == 2) || (isnumeric(x) && isscalar(x) && (x >= 0));
 validEdgeMethod = @(x) convertCharsToStrings(x)=="SlopeThreshold" | convertCharsToStrings(x)=="KneePoint" | convertCharsToStrings(x)=="NearPeaks";
 addRequired(p, 'profiles')
@@ -185,7 +185,7 @@ for i = 1:no_profs
         rslope = slope(1:no_pts-min_width); 
     
         % find first idx that satisfies threshold condition
-        idx = find(rslope > slope_thr); 
+        idx = find(rslope > -slope_thr); 
         if isempty(idx)                     % if threshold is not reached
             idx = 1;                        % take profile end as channel edge
         else

@@ -209,7 +209,7 @@ for i = 1:no_profs
         end
 
         % profile slope was flipped! correcting for that:
-        idx = prof_length+1 - idx;
+        idx = prof_length - idx;
         ledge_idx(i) = idx;
         % clamp to min/max width
         if lmin_width > 0; ledge_idx(i) = max(ledge_idx(i), no_pts + lmin_width); end

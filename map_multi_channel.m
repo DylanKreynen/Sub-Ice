@@ -204,9 +204,7 @@ edge_coord = cell(no_channels, 1);
 edge_elev = cell(no_channels, 1); 
 fchannel = cell(no_channels, 1);
 
-thresh_idx = cell(no_channels, 1); % TEST
-
-% to store whether we successfully found the channel centerline: 
+% to store whether we "successfully" found the channel centerline: 
 channel_status = zeros(no_channels, 1); 
 
 % loop over channels
@@ -246,7 +244,7 @@ for c = 1:no_channels
                                                 'peak_prom',        peak_prom, ...
                                                 'keep_pks',         keep_pks); 
 
-    % vizualise
+    % visualize
     % centerlines
     scatter(x_cent{c}, y_cent{c}, 15, 'r', 'filled')
     plot(x_cent{c}, y_cent{c}, 'r')
@@ -259,7 +257,7 @@ for c = 1:no_channels
     scatter(x_prof{c}(:), y_prof{c}(:), 2, 'w')
     % annotation
     text(P_start(c,1) + text_offs, P_start(c,2) + text_offs, channel_label(c), 'Color', 'm')
-    pause(0.01) % just to force matlab to plot
+    pause(0.01) % (force matlab to plot)
     
     % label for shapefile
     fchannel{c} = channel_label(c); 
@@ -341,7 +339,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         plot(prof_dist_vector, profiles{c}, 'LineWidth', 3)
         xlabel('distance from profile center [m]')
         ylabel('elevation [m]')
-        title('channel cross sectional profiles (full, abs. heights)')
+        title(append(channel_label(c), ' cross sectional profiles (full, abs. heights)'))
         % color gradient
         cmap = parula(no_profiles); 
         set(gca(), 'ColorOrder', cmap)
@@ -371,7 +369,7 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         end
         xlabel('distance from profile center [m]')
         ylabel('depth [m]')
-        title('channel cross sectional profiles (depth below left edge)')
+        title(append(channel_label(c), ' channel cross sectional profiles (depth below left edge)'))
         cmap = parula(no_profiles); 
         set(gca(), 'ColorOrder', cmap)
         hcb = colorbar; 

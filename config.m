@@ -63,6 +63,7 @@ prof_interval = 0;                % spacing between profiles along centerline [m
                                   % (0 = one profile per centerline search segment)
 % channel edge parameters
 edge_method = "KneePoint";        % method to use to identify channel edges ("SlopeThreshold", "KneePoint" or "NearPeaks")
+knee_method = "LinearRegression"; % kneepoint algorithm to use ("LinearRegression" or "Kneedle", used with edge methods "KneePoint" and "NearPeaks")
 min_width = 500;                  % minimum channel width [m] (set to 0 for no minimum width)
 max_width = 0;                    % maximum channel width [m] (set to 0 for maximum width = prof_length)
 sg_window = 1000;                 % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing, Savitzky-Golay filter)

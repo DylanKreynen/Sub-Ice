@@ -10,6 +10,7 @@
 !functions/find_centerline.m
 !functions/find_edges.m
 !functions/find_profiles.m
+!functions/find_trough.m
 !functions/knee_pt.m
 !functions/lines_to_shp.m
 !functions/profile_query_pts.m

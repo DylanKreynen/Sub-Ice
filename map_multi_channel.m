@@ -203,6 +203,8 @@ edge_idx = cell(no_channels, 1);
 edge_coord = cell(no_channels, 1); 
 edge_elev = cell(no_channels, 1); 
 fchannel = cell(no_channels, 1);
+trough_elev = cell(no_channels, 1); 
+trough_depth = cell(no_channels, 1); 
 
 % to store whether we "successfully" found the channel centerline: 
 channel_status = zeros(no_channels, 1); 
@@ -247,6 +249,13 @@ for c = 1:no_channels
                                                 'z_thr_elev',       z_thr_elev, ...
                                                 'z_thr_idx',        z_thr_idx, ...
                                                 'edge_subst_window', edge_subst_window);
+
+    % find channel trough elevation and depth
+    [trough_elev{c}, trough_depth{c}] = find_trough(profiles{c}, edge_elev{c}, ...
+                                                'z_thr',            z_thr_trough_elev, ...
+                                                'subst_window',     trough_subst_window); 
+
+    channel_width = (edge_idx{c}(:,1)-edge_idx{c}(:,2))*res; % [m]
 
     % visualize
     % profile transects
@@ -350,22 +359,23 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         redge_pos(valid_r) = prof_dist_vector(edge_idx{c}(valid_r, 2)');
         edge_pos_vector = [ledge_pos(:), redge_pos(:)];
 
+        % color gradient shared across both profile figures
+        cmap = parula(no_profiles);
+
         % full cross sectional profiles using absolute elevation
         figure
         hold on
+        set(gca(), 'ColorOrder', cmap)
         plot(prof_dist_vector, profiles{c}, 'LineWidth', 3)
         xlabel('distance from profile center [m]')
         ylabel('elevation [m]')
         title(append(channel_label(c), ' cross sectional profiles (full, abs. heights)'))
-        % color gradient
-        cmap = parula(no_profiles); 
-        set(gca(), 'ColorOrder', cmap)
-        hcb = colorbar; 
+        hcb = colorbar;
         title(hcb, 'norm. dist. along channel [-]')
         plot(edge_pos_vector, edge_elev{c}, 'o', 'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'g', 'MarkerSize', 7)
 
         if save_figs
-            fn = append(fig_dir, file_prefix, channel_label(c), '_full_profiles_elev'); 
+            fn = append(fig_dir, file_prefix, channel_label(c), '_full_profiles_elev');
             print(fn, figs_filetype, figs_resolution)
         end
 
@@ -373,25 +383,25 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         figure
         hold on
         for i = 1:no_profiles
-            prof = profiles{c}(:,i); 
-
-            % replace values outside of channel edges to NaN
-            if ~isnan(edge_idx{c}(i,2)) && ~isnan(edge_idx{c}(i,1))
-                prof(1:edge_idx{c}(i,2)) = NaN;
-                prof(edge_idx{c}(i,1):end) = NaN;
+            if isnan(edge_idx{c}(i,1)) || isnan(edge_idx{c}(i,2))
+                continue
             end
-            
-            % from absolute height to depth below left channel edge
-            prof = prof - edge_elev{c}(i,1); 
 
-            plot(prof_dist_vector, prof, 'LineWidth', 3)
+            prof = profiles{c}(:,i);
+
+            % replace values outside of channel edges to NaN (keep edge points)
+            prof(1:edge_idx{c}(i,2)-1) = NaN;
+            prof(edge_idx{c}(i,1)+1:end) = NaN;
+
+            % from absolute height to depth below left channel edge
+            prof = prof - edge_elev{c}(i,1);
+
+            plot(prof_dist_vector, prof, 'Color', cmap(i,:), 'LineWidth', 3)
         end
         xlabel('distance from profile center [m]')
         ylabel('depth [m]')
         title(append(channel_label(c), ' channel cross sectional profiles (depth below left edge)'))
-        cmap = parula(no_profiles); 
-        set(gca(), 'ColorOrder', cmap)
-        hcb = colorbar; 
+        hcb = colorbar;
         title(hcb, 'norm. dist. along profile [-]')
 
         if save_figs
@@ -407,13 +417,11 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         hold on
         plot(norm_dist_vector*channel_length{c}/1000, mean(profiles{c}))
         
-        trough_elev = min(profiles{c}); % TO DO: min of profile not necessarily trough! could also be crack
-        trough_depth = min(profiles{c})-edge_elev{c}(:,1)'; 
         channel_width = (edge_idx{c}(:,1)-edge_idx{c}(:,2))*res; % [m]
 
         figure(11)
         hold on
-        plot(norm_dist_vector*channel_length{c}/1000, trough_depth)
+        plot(norm_dist_vector*channel_length{c}/1000, trough_depth{c})
         
         figure(12)
         hold on

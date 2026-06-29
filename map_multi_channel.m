@@ -425,7 +425,33 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         
         figure(12)
         hold on
-        plot(norm_dist_vector*channel_length{c}/1000, channel_width/1000)  
+        plot(norm_dist_vector*channel_length{c}/1000, channel_width/1000)
+
+        % edge and trough elevation and depth along channel (one figure per channel)
+        figure
+
+        subplot(2, 1, 1)
+        hold on
+        plot(norm_dist_vector*channel_length{c}/1000, edge_elev{c}(:,1), 'Color', [0.0 0.6 0.0])
+        plot(norm_dist_vector*channel_length{c}/1000, edge_elev{c}(:,2), 'Color', [0.4 0.8 0.4])
+        plot(norm_dist_vector*channel_length{c}/1000, trough_elev{c},    'r')
+        ylabel('elevation [m]')
+        title(append(channel_label(c), ' edge and trough elevation along channel'))
+        legend('left edge', 'right edge', 'trough')
+
+        subplot(2, 1, 2)
+        hold on
+        plot(norm_dist_vector*channel_length{c}/1000, zeros(no_profiles, 1),                    'Color', [0.0 0.6 0.0])
+        plot(norm_dist_vector*channel_length{c}/1000, edge_elev{c}(:,2) - edge_elev{c}(:,1),   'Color', [0.4 0.8 0.4])
+        plot(norm_dist_vector*channel_length{c}/1000, trough_depth{c},                          'r')
+        xlabel('distance along channel [km]')
+        ylabel('depth w.r.t. left edge [m]')
+        legend('left edge', 'right edge', 'trough')
+
+        if save_figs
+            fn = append(fig_dir, file_prefix, channel_label(c), '_edge_trough_along_channel');
+            print(fn, figs_filetype, figs_resolution)
+        end
     end
     
     figure(10)

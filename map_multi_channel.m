@@ -239,23 +239,35 @@ for c = 1:no_channels
                                                 'knee_method',      knee_method, ...
                                                 'min_width',        min_width, ...
                                                 'max_width',        max_width, ...
-                                                'sg_window',        sg_window, ... 
+                                                'sg_window',        sg_window, ...
                                                 'm_window',         m_window, ...
-                                                'slope_thr',        slope_thr, ... 
+                                                'slope_thr',        slope_thr, ...
                                                 'peak_prom',        peak_prom, ...
-                                                'keep_pks',         keep_pks); 
+                                                'keep_pks',         keep_pks, ...
+                                                'z_thr_elev',       z_thr_elev, ...
+                                                'z_thr_idx',        z_thr_idx, ...
+                                                'edge_subst_window', edge_subst_window);
 
     % visualize
+    % profile transects
+    if plot_prof_transects == 1
+        scatter(x_prof{c}(:), y_prof{c}(:), 1, 'w')
+    end
     % centerlines
     scatter(x_cent{c}, y_cent{c}, 15, 'r', 'filled')
     plot(x_cent{c}, y_cent{c}, 'r')
-    % outlines
+    % edges/outlines
     scatter(edge_coord{c}(:,1), edge_coord{c}(:,2), 15, 'g', 'filled')
     scatter(edge_coord{c}(:,3), edge_coord{c}(:,4), 15, 'g', 'filled')
-    plot(edge_coord{c}(:,1), edge_coord{c}(:,2), 'g')
-    plot(edge_coord{c}(:,3), edge_coord{c}(:,4), 'g')
-    % profile transects
-    scatter(x_prof{c}(:), y_prof{c}(:), 2, 'w')
+    if plot_edge_gaps == 1
+        lvalid = ~isnan(edge_coord{c}(:,1));
+        rvalid = ~isnan(edge_coord{c}(:,3));
+        plot(edge_coord{c}(lvalid,1), edge_coord{c}(lvalid,2), 'g')
+        plot(edge_coord{c}(rvalid,3), edge_coord{c}(rvalid,4), 'g')
+    else
+        plot(edge_coord{c}(:,1), edge_coord{c}(:,2), 'g')
+        plot(edge_coord{c}(:,3), edge_coord{c}(:,4), 'g')
+    end
     % annotation
     text(P_start(c,1) + text_offs, P_start(c,2) + text_offs, channel_label(c), 'Color', 'm')
     pause(0.01) % (force matlab to plot)
@@ -330,8 +342,12 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         % for plotting profiles with [m] on x-axis
         prof_dist_vector = (1:size(profiles{c}, 1))*res; 
         prof_dist_vector = prof_dist_vector - mean(prof_dist_vector);
-        ledge_pos = prof_dist_vector(edge_idx{c}(:, 1)');
-        redge_pos = prof_dist_vector(edge_idx{c}(:, 2)');
+        valid_l = ~isnan(edge_idx{c}(:,1));
+        valid_r = ~isnan(edge_idx{c}(:,2));
+        ledge_pos = NaN(no_profiles, 1);
+        redge_pos = NaN(no_profiles, 1);
+        ledge_pos(valid_l) = prof_dist_vector(edge_idx{c}(valid_l, 1)');
+        redge_pos(valid_r) = prof_dist_vector(edge_idx{c}(valid_r, 2)');
         edge_pos_vector = [ledge_pos(:), redge_pos(:)];
 
         % full cross sectional profiles using absolute elevation
@@ -360,8 +376,10 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
             prof = profiles{c}(:,i); 
 
             % replace values outside of channel edges to NaN
-            prof(1:edge_idx{c}(i,2)) = NaN;
-            prof(edge_idx{c}(i,1):end) = NaN; 
+            if ~isnan(edge_idx{c}(i,2)) && ~isnan(edge_idx{c}(i,1))
+                prof(1:edge_idx{c}(i,2)) = NaN;
+                prof(edge_idx{c}(i,1):end) = NaN;
+            end
             
             % from absolute height to depth below left channel edge
             prof = prof - edge_elev{c}(i,1); 

@@ -1,4 +1,4 @@
-function [edge_idx, edge_coord, edge_elev, alongprof] = find_edges(profiles, x_prof, y_prof, res, varargin)
+function [edge_idx, edge_coord, edge_elev, valid_edges, alongprof] = find_edges(profiles, x_prof, y_prof, res, varargin)
 %[edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof,
 %res, edge_method, slope_thr, slope_thr, min_width, max_width, peak_prom, sg_window, m_window)
 %
@@ -35,6 +35,13 @@ function [edge_idx, edge_coord, edge_elev, alongprof] = find_edges(profiles, x_p
 % sg_window = window size for profile smoothing [m] (will be rounded, set to 0 for no smoothing)
 % m_window = window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing)
 % keep_peaks = prevent peaks from being adjusted by along-channel edge smoothing (0 or 1, only used when edge_method = "NearPeaks")
+% 
+% optional input related to z-score outliers: 
+% z_thr_elev =  z-score outlier threshold, elevation of edge (set to 0 to skip outlier identification, default: 0)
+%               optional: [left_thr right_thr] to use different thresholds for the left and right edge
+% z_thr_idx =   z-score outlier threshold, profile index of edge (set to 0 to skip outlier identification, default: 0)
+%               optional: [left_thr right_thr] to use different thresholds for the left and right edge
+% edge_subst_window = window size for outlier substitution (moving median filter, set to 0 to leave out outliers altogether, default: 5)  
 %
 % output: 
 % edge_idx = matrix containing profile indices corr. to channel edges [-]
@@ -48,6 +55,10 @@ function [edge_idx, edge_coord, edge_elev, alongprof] = find_edges(profiles, x_p
 % edge_elev = matrix containing channel edge elevations [m]
 %               1st col: left channel edge elevation
 %               2nd col: right channel edge elevation]
+% valid_edges = matrix containing an edge outlier flag [-]
+%               1 = valid/original channel edge; 0 = outlier (left out or substituted)
+%               1st col: left channel edge outlier flag
+%               2nd col: right channel edge outlier flag
 % 
 % (c) Dylan Kreynen
 % University of Oslo
@@ -71,6 +82,9 @@ default_m_window = 0;
 default_edge_method = "KneePoint";
 default_keep_pks = false;
 default_knee_method = "LinearRegression"; 
+default_z_thr_elev = 0; 
+default_z_thr_idx = 0; 
+default_edge_subst_window = 5;
 
 % parse input arguments
 p = inputParser; 
@@ -91,6 +105,9 @@ addOptional(p, 'm_window', default_m_window, validScalarPosNum)
 addOptional(p, 'edge_method', default_edge_method, validEdgeMethod)
 addOptional(p, 'keep_pks', default_keep_pks, validScalarPosNum)
 addOptional(p, 'knee_method', default_knee_method, validKneeMethod)
+addOptional(p, 'z_thr_elev', default_z_thr_elev, validMaxMinWidths)
+addOptional(p, 'z_thr_idx', default_z_thr_idx, validMaxMinWidths)
+addOptional(p, 'edge_subst_window', default_edge_subst_window, validScalarPosNum)
 parse(p, profiles, x_prof, y_prof, res, varargin{:}); 
 
 slope_thr = p.Results.slope_thr; 
@@ -102,6 +119,9 @@ m_window = p.Results.m_window;
 edge_method = convertCharsToStrings(p.Results.edge_method);
 keep_pks = p.Results.keep_pks;
 knee_method = p.Results.knee_method;
+z_thr_elev = p.Results.z_thr_elev; 
+z_thr_idx = p.Results.z_thr_idx; 
+edge_subst_window = p.Results.edge_subst_window; 
 
 
 %% actual function
@@ -307,34 +327,138 @@ else
     ledge_idx_filt = ledge_idx; 
     redge_idx_filt = redge_idx; 
 end
-edge_idx = [ledge_idx_filt redge_idx_filt];  % [-]
+
+% note: now we smooth the edges using a median filter, but take the exact
+% elevation at the (smoothed) edge coordinates - probably not optimal
+% (z-score outlier filtering, down below, probably better implemented)
 
 
-% go from indices to coordinates and fetch edge elevations
+%% edge filtering and output preparation
+%  identify and deal with outliers, based on elevation and width
+%  for now: z-score outliers and moving median substitution
+
+% deal with z-score thresholds, might be different for left and right edge
+if length(z_thr_elev) == 2
+    z_thr_lelev = z_thr_elev(1); 
+    z_thr_relev = z_thr_elev(2); 
+elseif length(z_thr_elev) == 1
+    z_thr_lelev = z_thr_elev; 
+    z_thr_relev = z_thr_elev;
+else
+    error("Check dimensions of z_thr_elev. Should be 1x1 or 1x2. ")
+end
+
+if length(z_thr_idx) == 2
+    z_thr_lidx = z_thr_idx(1);
+    z_thr_ridx = z_thr_idx(2); 
+elseif length(z_thr_idx) == 1; 
+    z_thr_lidx = z_thr_idx;
+    z_thr_ridx = z_thr_idx; 
+else
+    error("Check dimensions of z_thr_idx. Should be 1x1 or 1x2. ")
+end
+
+% raise warning when median smoothing ánd outlier filtering
+if any([z_thr_lelev, z_thr_relev, z_thr_lidx, z_thr_ridx]) && m_window ~= 0
+    warning("Note: performing along-channel edge smoothing before outlier filtering. Suggestion: set m_window = 0 to skip along-channel smoothing of channel edges.")
+end
+
+% fetch edge elevations
+for i = 1:no_profs
+    prof = profiles(:,i); 
+    lelev(i) = prof(ledge_idx_filt(i));
+    relev(i) = prof(redge_idx_filt(i)); 
+end
+
+% z-score for edge profile index
+mean_idx = mean(ledge_idx_filt); 
+std_idx = std(ledge_idx_filt); 
+z_lidx = (ledge_idx_filt-mean_idx)./std_idx; % left edge
+mean_idx = mean(redge_idx_filt); 
+std_idx = std(redge_idx_filt); 
+z_ridx = (redge_idx_filt-mean_idx)./std_idx; % right edge
+
+% z-score for edge elevation
+mean_elev = mean(lelev); 
+std_elev = std(lelev); 
+z_lelev = (lelev-mean_elev)./std_elev; % left edge
+mean_elev = mean(relev); 
+std_elev = std(relev); 
+z_relev = (relev-mean_elev)./std_elev; % right edge
+
+% flag outliers (1 = keep, 0 = outlier)
+% threshold = 0 means "skip filtering" for that criterion
+valid_ledge = ones(size(ledge_idx_filt));
+if z_thr_lidx > 0;  valid_ledge(abs(z_lidx)  > z_thr_lidx)  = 0; end
+if z_thr_lelev > 0; valid_ledge(abs(z_lelev) > z_thr_lelev) = 0; end
+valid_redge = ones(size(redge_idx_filt));
+if z_thr_ridx > 0;  valid_redge(abs(z_ridx)  > z_thr_ridx)  = 0; end
+if z_thr_relev > 0; valid_redge(abs(z_relev) > z_thr_relev) = 0; end
+valid_edges = [valid_ledge valid_redge]; % both edges
+
+% substitute outliers
+% two options: 
+%   - leave out outliers (replace with NaN)
+%   - substitute values based on moving median filter
+% temporarily set filtered out edges to NaN
+
+lelev(valid_ledge==0) = NaN; 
+relev(valid_redge==0) = NaN; 
+ledge_idx_filt(valid_ledge==0) = NaN; 
+redge_idx_filt(valid_redge==0) = NaN; 
+
+if edge_subst_window ~= 0 
+% use moving median filter to replace outliers
+
+    % construct moving median substitute values
+    med_lelev = movmedian(lelev, edge_subst_window, "omitnan"); 
+    med_relev = movmedian(relev, edge_subst_window, "omitnan"); 
+    med_lidx = movmedian(ledge_idx_filt, edge_subst_window, "omitnan"); 
+    med_ridx = movmedian(redge_idx_filt, edge_subst_window, "omitnan"); 
+    
+    % substitute where necessary
+    lelev(valid_ledge==0) = med_lelev(valid_ledge==0); 
+    relev(valid_redge==0) = med_relev(valid_redge==0); 
+    ledge_idx_filt(valid_ledge==0) = med_lidx(valid_ledge==0); 
+    redge_idx_filt(valid_redge==0) = med_ridx(valid_redge==0); 
+
+end
+
+% convert to integers for indexing, prep output
+% use round() instead of int32() to preserve NaN for filtered-out outliers
+ledge_idx_filt = round(ledge_idx_filt);
+redge_idx_filt = round(redge_idx_filt);
+edge_idx = [ledge_idx_filt redge_idx_filt];
+edge_elev = [lelev relev]; 
+
+% fetch edge image coordinates
 
 for i = 1:no_profs
 
-    prof = profiles(:,i); 
     x_pr = x_prof(:,i); 
     y_pr = y_prof(:,i); 
 
     lidx = ledge_idx_filt(i);
     ridx = redge_idx_filt(i);
 
-    % pixel coords and elevation
-    rx(i) = x_pr(ridx); 
-    ry(i) = y_pr(ridx); 
-    relev(i) = prof(ridx); 
+    % image coordinates [pix]
 
-    % pixel coords and elevation
-    lx(i) = x_pr(lidx); 
-    ly(i) = y_pr(lidx); 
-    lelev(i) = prof(lidx);
+    if isnan(lidx) || ~lidx
+        lx(i) = NaN;
+        ly(i) = NaN;
+    else
+        lx(i) = x_pr(lidx); 
+        ly(i) = y_pr(lidx);
+    end
+
+    if isnan(ridx) || ~ridx
+        rx(i) = NaN; 
+        ry(i) = NaN; 
+    else
+        rx(i) = x_pr(ridx); 
+        ry(i) = y_pr(ridx); 
+    end
 
 end
 
 edge_coord = [lx ly rx ry];        % [pix]
-edge_elev = [lelev relev];         % [m]
-
-% note: now we smooth the edges using a median filter, but take the exact
-% elevation at the (smoothed) edge coordinates - probably not optimal

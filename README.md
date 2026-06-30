@@ -11,14 +11,14 @@ For now, please refer to comments in the code for details!
 
  #### Output: 
   - channel centerlines and outlines (figures and georeferenced shapefiles)
-  - cross sectional elevation/depth profiles (figures)
+  - cross sectional elevation/depth profiles incl. channel edges (figures)
   - channel depth and width along centerlines (figures)
 
 
 #### Getting started: 
 1. Clone this GitHub repository to create a local copy of the code on your computer (or download and unzip). 
 2. Update the user specifiable parameters in *config.m* as required. 
-3. Run *map_multi_channel.m* using a recent version of Matlab (code tested in R2024a). 
+3. Run *map_multi_channel.m* using a recent version of Matlab (code tested in R2026a). 
 
 That's it! All data required to map your first basal channels is already included. 
 
@@ -27,7 +27,7 @@ That's it! All data required to map your first basal channels is already include
   - *map_multi_channel.m*:
     map one or more channels given a single DEM
   - *map_channel_timeseries.m*:
-    map a single channel over different DEMs
+    map a single channel over different DEMs (note: this workflow needs updating, use map_multi_channel.m instead)
   - *config.m*:
     configuration file with user specifiable variables
 
@@ -42,7 +42,7 @@ That's it! All data required to map your first basal channels is already include
 
 \
 **Sub-Ice**: **Su**rface-**b**ased **I**ce Shelf **C**hannel **E**xtraction  
-version as of 2026-05-15 (tested using R2026a)
+version as of 2026-06-30 (tested using R2026a)
 
 &copy; [Dylan Kreynen](https://www.mn.uio.no/geo/english/people/aca/geohyd/kreynen/)  
 University of Oslo  

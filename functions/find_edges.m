@@ -4,9 +4,17 @@ function [edge_idx, edge_coord, edge_elev, valid_edges, alongprof] = find_edges(
 %
 % Returns indices of channel cross sectional profiles that correspond with
 % the channel's outer edges, based on either a slope threshold or knee point
-% method. Edges can be a certain min. distance away from channel center
-% line. Right and left channel edges correspond to right and left of channel 
+% method. Right and left channel edges correspond to right and left of channel 
 % centerline, looking downstream (from channel start to end). 
+%
+% Min. and max. width are handled the same way for all edge methods, for 
+% each side of the profile separately: 
+%   - the search runs from the centerline outward up to max. width; the 
+%     profile beyond max. width is ignored
+%   - edges always lie between min. and max. width: slope threshold and 
+%     peak candidates are only searched for in that range; knee points are
+%     computed on the centerline-to-max. width half profile and moved out to
+%     min. width if they fall inside it
 % 
 % Profiles can be smoothed across-channel using a Savitsky-Golay filter 
 % before applying edge detection (especially useful for the slope threshold
@@ -14,10 +22,9 @@ function [edge_idx, edge_coord, edge_elev, valid_edges, alongprof] = find_edges(
 % median filter (applicable to all methods). This version of this function 
 % also outputs "along profiles" for output figures (work in progress).  
 %
-% Near Peaks method is restricted to look within the minimum channel width
-% and the maximum channel width. It detects if there are significant peaks
-% within the area, and selects the closest peak to the channel. Otherwise
-% it finds the knee point within the area.
+% Near Peaks method detects if there are significant peaks between min. and
+% max. width, and selects the peak closest to the channel centerline. 
+% Otherwise it falls back on the knee point (same as the KneePoint method).
 %
 % required input: 
 % profiles = matrix containing profiles' sampled elevation [m]
@@ -30,7 +37,12 @@ function [edge_idx, edge_coord, edge_elev, valid_edges, alongprof] = find_edges(
 % knee_method = kneepoint algorithm to use ("LinearRegression" or "Kneedle", used with edge methods "KneePoint" and "NearPeaks") 
 % slope_thr = slope threshold for identifying channel edge [deg] (default: 0 deg)
 % min_width = minimum channel width [m] (default: 500m, set to 0 for no minimum width)
+%               scalar: total channel width, split evenly over left and right side
+%               optional: [left right] min. distance from centerline for each side [m]
 % max_width = maximum channel width [m] (set to 0 for maximum width = prof_length, default: 0)
+%               scalar: total channel width, split evenly over left and right side
+%               optional: [left right] max. distance from centerline for each side [m]
+%               (set an element to 0 for no maximum on that side)
 % peak_prom = hMinPeakProm for findpeaks() [m], minimum prominence for channel edge (only used when edge_method = "NearPeaks")
 % sg_window = window size for profile smoothing [m] (will be rounded, set to 0 for no smoothing)
 % m_window = window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing)
@@ -131,31 +143,31 @@ prof_length = size(profiles, 1); % length of cross sectional profiles [-] (no. o
 samp_step = sqrt((x_prof(1,1)-x_prof(2,1))^2 + (y_prof(1,1)-y_prof(2,1))^2); % [pix]
 samp_step = samp_step*res;       % distance between sampling points, now in [m]
 
-% channel edge should be at least this distance away from channel centerline
-
-
-if ~isscalar(max_width)
-    lmax_width = ceil(max_width(1)/samp_step);
-    rmax_width = ceil(max_width(2)/samp_step);
+% search limits for each side, as offsets from the centerline [-] (no. of samples)
+% 1st element: left channel edge, 2nd element: right channel edge
+% scalar width = total channel width, split evenly over both sides
+% [left right] width = distance from centerline for each side
+if isscalar(min_width)
+    min_off = ceil(min_width/samp_step/2)*[1 1];
 else
-    max_width = max_width/samp_step;    % from [m] to [-] (index)
-    max_width = ceil(max_width/2);      % half-distance
-    lmax_width = max_width;
-    rmax_width = max_width;
+    min_off = ceil(min_width(:)'/samp_step);
+end
+if isscalar(max_width)
+    max_off = ceil(max_width/samp_step/2)*[1 1];
+else
+    max_off = ceil(max_width(:)'/samp_step);
 end
 
-% max_width = 0 means no limit: use full half-profile length on each side
-if lmax_width == 0; lmax_width = floor(prof_length/2); end
-if rmax_width == 0; rmax_width = floor(prof_length/2); end
+no_pts = ceil(prof_length/2);                       % centerline index (no. of pts in "half" a profile, incl. midpoint) [-]
+avail_off = [prof_length-no_pts, no_pts-1];         % available samples beyond centerline, left and right [-]
+max_off(max_off == 0) = avail_off(max_off == 0);    % max_width = 0 means no limit: use full half profile
+max_off = min(max_off, avail_off);
 
-if ~isscalar(min_width)
-    lmin_width = ceil(min_width(1)/samp_step);
-    rmin_width = ceil(min_width(2)/samp_step);
-else
-    min_width = min_width/samp_step;    % from [m] to [-] (index)
-    min_width = ceil(min_width/2);      % half-distance
-    lmin_width = min_width;
-    rmin_width = min_width;
+side_names = ["left", "right"];
+for s = 1:2
+    if min_off(s) > max_off(s)
+        error("find_edges: min. width exceeds max. width (or the profile half length) on the %s side.", side_names(s))
+    end
 end
 
 slope_thr = deg2rad(slope_thr);         % from [deg] to [rad]
@@ -174,6 +186,7 @@ rx = NaN(no_profs, 1);           % right edge x coord [pix]
 ry = NaN(no_profs, 1);           % right edge y coord [pix]
 relev = NaN(no_profs, 1);        % channel elevation at right edge of profile [m]
 % left/right is correct when looking from START to END
+% left edge: profile indices > no_pts, right edge: profile indices < no_pts
 
 % smoothing array
 ledge_sm = true(no_profs, 1);
@@ -189,8 +202,6 @@ for i = 1:no_profs
 
     prof = profiles(:,i); 
 
-    no_pts = ceil(prof_length/2);                       % no of pts in "half" a profile (incl. midpoint) [-]
-
     % along profiles (no smoothing)
     ralongprof = prof([no_pts no_pts+alongprofidx]);    % incl. "centerline"
     lalongprof = prof(fliplr(alongprofidx));            % excl. "centerline"
@@ -203,105 +214,60 @@ for i = 1:no_profs
     % note: should we only smooth for slope threshold method, or also kneepoint/nearpeaks?
 
     if edge_method == "SlopeThreshold"
-        % derivative to find slope
-        slope = gradient(prof, samp_step);  % slope in [rad]
-        
-        % right channel edge (edge "to the right" of profile midpoint)
-        rslope = slope(1:no_pts-min_width); 
-    
-        % find first idx that satisfies threshold condition
-        idx = find(rslope > -slope_thr); 
-        if isempty(idx)                     % if threshold is not reached
-            idx = 1;                        % take profile end as channel edge
-        else
-            idx = idx(end);                 % only take the index closest to channel midpoint (after max slope)
-        end 
-        redge_idx(i) = idx;
-        % clamp to min/max width
-        if rmin_width > 0; redge_idx(i) = min(redge_idx(i), no_pts - rmin_width); end
-        redge_idx(i) = max(redge_idx(i), no_pts - rmax_width);
+        slope = gradient(prof, samp_step);  % slope in [rad] (small angle), w.r.t. increasing profile index
+    end
 
-        % left channel edge (edge "to the left" of profile midpoint)
-        lslope = flip(slope);               % flipping profile slope for easier slicing
-        lslope = lslope(1:no_pts-min_width);
+    for s = 1:2     % 1 = left channel edge, 2 = right channel edge
 
-        % find first idx that satisfies threshold condition
-        idx = find(lslope < slope_thr);
-        if isempty(idx)                     % if threshold is not reached
-            idx = 1;                        % take profile end as channel edge
+        % half profile from the centerline outward, up to max. width
+        % hidx(k+1) is the profile index at offset k from the centerline
+        if s == 1
+            hidx = no_pts + (0:max_off(s))';
         else
-            idx = idx(end);                 % only take the index closest to channel midpoint (after max slope)
+            hidx = no_pts - (0:max_off(s))';
+        end
+        hprof = prof(hidx);
+        k_min = min_off(s);
+        is_peak = false;
+
+        if edge_method == "SlopeThreshold"
+            % slope in outward direction
+            hslope = slope(hidx);
+            if s == 2
+                hslope = -hslope;
+            end
+            % first point beyond min. width where the wall has flattened
+            k = find(hslope(k_min+1:end) < slope_thr, 1) + k_min - 1;
+            if isempty(k)                       % if threshold is not reached
+                k = max_off(s);                 % take max. width as channel edge
+            end
+
+        elseif edge_method == "KneePoint"
+            [~, idx] = knee_pt(hprof, 'knee_method', knee_method);
+            k = max(idx - 1, k_min);            % at least min. width
+
+        elseif edge_method == "NearPeaks"
+            % find the peaks between min. and max. width
+            [~, pk] = findpeaks(hprof(k_min+1:end), MinPeakProminence=peak_prom);
+            if isempty(pk)                      % if no peaks are found: knee point
+                [~, idx] = knee_pt(hprof, 'knee_method', knee_method);
+                k = max(idx - 1, k_min);        % at least min. width
+            else
+                k = k_min + pk(1) - 1;          % peak closest to the centerline
+                is_peak = true;
+            end
+
+        else
+            error("Invalid edge method. Check find_edges() parameters, set edge_method to 'SlopeThreshold', 'KneePoint' or 'NearPeaks'.")
         end
 
-        % profile slope was flipped! correcting for that:
-        idx = prof_length - idx;
-        ledge_idx(i) = idx;
-        % clamp to min/max width
-        if lmin_width > 0; ledge_idx(i) = max(ledge_idx(i), no_pts + lmin_width); end
-        ledge_idx(i) = min(ledge_idx(i), no_pts + lmax_width);
-
-    elseif edge_method == "KneePoint"
-
-        % right channel edge
-        rprof = prof(1:no_pts);
-        rprof = flip(rprof);
-        [~, idx] = knee_pt(rprof, 'knee_method', knee_method);
-        % profile was flipped, correcting for that:
-        redge_idx(i) = no_pts - idx;
-        % clamp to min/max width
-        if rmin_width > 0; redge_idx(i) = min(redge_idx(i), no_pts - rmin_width); end
-        redge_idx(i) = max(redge_idx(i), no_pts - rmax_width);
-
-        % left channel edge
-        lprof = prof(no_pts:end);
-        [~, idx] = knee_pt(lprof, 'knee_method', knee_method);
-        ledge_idx(i) = no_pts + idx;
-        % clamp to min/max width
-        if lmin_width > 0; ledge_idx(i) = max(ledge_idx(i), no_pts + lmin_width); end
-        ledge_idx(i) = min(ledge_idx(i), no_pts + lmax_width);
-
-    elseif edge_method == "NearPeaks"
-        % right channel edge
-        out_th = no_pts-rmax_width;      % index of outer threshold
-
-        rprof = prof(1:no_pts-rmin_width);
-
-        % find the peaks along the right channel edge
-        [~, pk] = findpeaks(rprof((no_pts-rmax_width):end), MinPeakProminence=peak_prom);
-
-        if isempty(pk)                                  % if no peaks are found
-            [~, idx] = knee_pt(rprof(out_th:end), 'knee_method', knee_method);      % find the knee point in the search area
-            redge_idx(i) = idx+out_th;                  
-            redge_sm(i) = true;                         % set as filterable
+        if s == 1
+            ledge_idx(i) = hidx(k+1);
+            ledge_sm(i) = ~is_peak;             % peaks are preserved during filtering (if keep_pks)
         else
-            idx = ceil(pk(end)+out_th);                 % find the index of the peak
-            redge_idx(i) = idx;                         
-            redge_sm(i) = false;                        % set to preserve during filtering
-        end 
-
-        % left channel edge
-        out_th = no_pts-lmax_width;      % index of outer threshold
-        
-        lprof = flip(prof); 
-        lprof = lprof(1:no_pts-lmin_width);
-
-        % find the peaks along the left channel edge
-        [~, pk] = findpeaks(lprof(out_th:end), MinPeakProminence=peak_prom);
-
-        if isempty(pk)                                  % if no peaks are found
-            [~, idx] = knee_pt(lprof(out_th:end), 'knee_method', knee_method);      % find the knee point in the search area
-            idx = prof_length - (idx+out_th);         % profile was flipped! correcting for that:
-            ledge_sm(i) = true;                         % set as filterable
-        else                                            
-            idx = ceil(pk(end)+out_th);                 % find the index of the peak
-            idx = prof_length - idx;                  % profile was flipped! correcting for that:
-            ledge_sm(i) = false;                        % set to preserve during filtering
-        end 
-
-        ledge_idx(i) = idx;
-
-    else
-        error("Invalid edge method. Check find_edges() parameters, set edge_method to 'SlopeThreshold', 'KneePoint' or 'NearPeaks'.")
+            redge_idx(i) = hidx(k+1);
+            redge_sm(i) = ~is_peak;
+        end
     end
 end
 

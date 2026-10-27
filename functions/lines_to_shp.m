@@ -11,8 +11,11 @@ function [] = lines_to_shp(x, y, R, path, varargin)
 % 
 % optional input: 
 % field = string, header for column in shapefile's attribute table (dynamic property, one per shapefile)
-% value = vector with values to save in said attribute table column (one per line) 
-% 
+% value = vector with values to save in said attribute table column (one per line)
+% attributes = table with additional attribute table columns, one row per line
+%              (in the order the lines are written; numeric, string, char or
+%              cellstr columns; names should be max. 10 characters for .dbf)
+%
 % note: 'x', 'y', and 'value' are also allowed to be of type 'cell' of equal length, 
 % in which case they may contain multiple matrics (but must all be of type 'cell')
 %
@@ -21,7 +24,7 @@ function [] = lines_to_shp(x, y, R, path, varargin)
 % 
 % (c) Dylan Kreynen
 % University of Oslo
-% 2024
+% 2024-2026
 
 %% inputParser
 
@@ -39,10 +42,12 @@ addRequired(p, 'R', validMapCellsRef)
 addRequired(p, 'path', validStringChar)
 addOptional(p, 'field', default_field, validStringChar)
 addOptional(p, 'value', default_value)
-parse(p, x, y, R, path, varargin{:}); 
+addParameter(p, 'attributes', table(), @istable)
+parse(p, x, y, R, path, varargin{:});
 
-field = p.Results.field; 
-value = p.Results.value; 
+field = p.Results.field;
+value = p.Results.value;
+attributes = p.Results.attributes;
 
 
 %% actual function
@@ -81,8 +86,23 @@ if length(x) > 1
     end
 end
 
-% .shp, .shx, .dbf files: 
-dbfspec = makedbfspec(gshape); 
+% add additional attributes (one row per line)
+if ~isempty(attributes)
+    if height(attributes) ~= length(gshape)
+        error(append("Number of attribute rows (", string(height(attributes)), ") does not match number of lines (", string(length(gshape)), "). "))
+    end
+    names = attributes.Properties.VariableNames;
+    for a = 1:length(names)
+        val = attributes.(names{a});
+        if isstring(val) || ischar(val)
+            val = cellstr(val);
+        end
+        gshape.(names{a}) = val';
+    end
+end
+
+% .shp, .shx, .dbf files:
+dbfspec = makedbfspec(gshape);
 shapewrite(gshape, path, 'DbfSpec', dbfspec);
 
 % .prj file: 

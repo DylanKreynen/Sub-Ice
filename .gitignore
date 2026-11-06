@@ -7,6 +7,7 @@
 !config.m
 !functions/
 !functions/centerline_query_pts.m
+!functions/channel_metrics.m
 !functions/find_centerline.m
 !functions/find_edges.m
 !functions/find_profiles.m

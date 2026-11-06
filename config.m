@@ -28,6 +28,7 @@ results_dir = './output/';
 proj_subdir = 'venable/'; 
 fig_subdir = 'fig/'; 
 shp_subdir = 'shp/'; 
+tab_subdir = 'tab/'; 
 file_prefix = 'default_';   % (optional)
 % output path will be constructed as follows: 
 % results_dir/proj_subdir/fig_subdir/file_prefix_....ext
@@ -37,6 +38,7 @@ figs_filetype = '-dpng';    % for use with "print()"
 figs_resolution = '-r500';  % for use with "print()"
 ext_figs = 1;               % plot (and print) extended figures Y/N
 save_shps = 0;              % save output as shapefiles Y/N
+save_tables = 0;            % save profiles and channel metrics as tables (.csv) Y/N
 
 % select method to specify channel start/end points
 start_end_method = 2;
@@ -125,5 +127,12 @@ if save_shps % shapefiles
     shp_dir = append(results_dir, proj_subdir, shp_subdir); 
     if ~exist(shp_dir, 'dir')
         mkdir(shp_dir)
+    end
+end
+
+if save_tables % tables
+    tab_dir = append(results_dir, proj_subdir, tab_subdir); 
+    if ~exist(tab_dir, 'dir')
+        mkdir(tab_dir)
     end
 end

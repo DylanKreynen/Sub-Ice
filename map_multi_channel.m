@@ -26,8 +26,9 @@ clc
 %  Output: 
 %   - channel centerlines and outlines (figures and georeferenced shapefiles)
 %     (ensemble mode: centerline ensemble only)
-%   - cross sectional elevation/depth profiles (figures)
-%   - channel depth and width along centerlines (figures)
+%   - cross sectional elevation/depth profiles (figures and tables)
+%   - channel depth and width along centerlines (figures and tables)
+%   - summary of channel metrics (table)
 % 
 %  (c) Dylan Kreynen
 %  University of Oslo
@@ -304,8 +305,12 @@ if ensemble_mode
 
     % success rate per channel
     disp("Ensemble realizations connecting start and end point, per channel: ")
-    disp(table(channel_label(:), no_success, round(100*no_success/no_members, 1), ...
-        'VariableNames', {'channel', 'no_realizations', 'success_rate_pct'}))
+    T_success = table(channel_label(:), no_success, repmat(no_members, no_channels, 1), round(100*no_success/no_members, 1), ...
+        'VariableNames', {'channel', 'no_realizations', 'no_members', 'success_rate_pct'}); 
+    disp(T_success)
+    if save_tables
+        writetable(T_success, append(tab_dir, file_prefix, 'centerline_ensemble_success.csv'))
+    end
 
     % overview figure
     f = figure(1); 
@@ -375,10 +380,12 @@ y_prof = cell(no_channels, 1);
 edge_idx = cell(no_channels, 1); 
 edge_coord = cell(no_channels, 1); 
 edge_elev = cell(no_channels, 1); 
+valid_edges = cell(no_channels, 1); 
 fchannel = cell(no_channels, 1);
 cent_info = cell(no_channels, 1); 
 trough_elev = cell(no_channels, 1); 
 trough_depth = cell(no_channels, 1); 
+valid_trough = cell(no_channels, 1); 
 
 % to store whether we "successfully" found the channel centerline: 
 channel_status = zeros(no_channels, 1); 
@@ -422,7 +429,7 @@ for c = 1:no_channels
     no_profiles = size(profiles, 2); 
 
     % find channel edges/outlines
-    [edge_idx{c}, edge_coord{c}, edge_elev{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, res, ...
+    [edge_idx{c}, edge_coord{c}, edge_elev{c}, valid_edges{c}] = find_edges(profiles{c}, x_prof{c}, y_prof{c}, res, ...
                                                 'edge_method',      edge_method, ...
                                                 'knee_method',      knee_method, ...
                                                 'min_width',        min_width, ...
@@ -437,7 +444,7 @@ for c = 1:no_channels
                                                 'edge_subst_window', edge_subst_window);
 
     % find channel trough elevation and depth
-    [trough_elev{c}, trough_depth{c}] = find_trough(profiles{c}, edge_elev{c}, ...
+    [trough_elev{c}, trough_depth{c}, valid_trough{c}] = find_trough(profiles{c}, edge_elev{c}, ...
                                                 'z_thr',            z_thr_trough_elev, ...
                                                 'subst_window',     trough_subst_window); 
 
@@ -477,8 +484,8 @@ disp(append("Finished mapping. End point reached for ", string(sum(channel_statu
 
 %% write to files
 
-if save_figs || save_shps
-    disp("Writing figure- and shapefiles... ")
+if save_figs || save_shps || save_tables
+    disp("Writing figures, shapefiles and/or tables... ")
 
     % print overview figure to file
     if save_figs
@@ -530,6 +537,41 @@ if save_figs || save_shps
             fn = append(shp_dir, file_prefix, channel_label(c), "_profiles"); 
             lines_to_shp(x_prof{c}, y_prof{c}, R, fn, 'prof_no', fprof);
         end 
+    end
+
+    % write profiles and channel metrics to tables (.csv)
+    if save_tables
+        T_sum = table(); 
+        for c = 1:no_channels
+            % channel metrics per profile (see channel_metrics())
+            T = channel_metrics(x_cent{c}, y_cent{c}, x_prof{c}, y_prof{c}, ...
+                edge_idx{c}, edge_coord{c}, edge_elev{c}, valid_edges{c}, ...
+                trough_elev{c}, valid_trough{c}, R, prof_interval); 
+            writetable(T, append(tab_dir, file_prefix, channel_label(c), '_metrics.csv'))
+
+            % cross sectional profile elevations: one column per profile,
+            % first column: distance from profile center [m] (positive =
+            % left side, looking downstream)
+            prof_dist = ((1:size(profiles{c}, 1))' - (size(profiles{c}, 1)+1)/2)*res; 
+            T_prof = array2table([prof_dist, profiles{c}], 'VariableNames', ...
+                ["dist_center_m", append("prof_", string(1:size(profiles{c}, 2)))]); 
+            writetable(T_prof, append(tab_dir, file_prefix, channel_label(c), '_profiles.csv'))
+
+            % summary statistics per channel
+            T_sum = [T_sum; table(channel_label(c), channel_status(c), channel_length{c}/1000, height(T), ...
+                mean(T.width_m, 'omitnan'), median(T.width_m, 'omitnan'), min(T.width_m), max(T.width_m), std(T.width_m, 'omitnan'), ...
+                mean(T.hw_left_m, 'omitnan'), mean(T.hw_right_m, 'omitnan'), ...
+                mean(T.depth_m, 'omitnan'), median(T.depth_m, 'omitnan'), max(T.depth_m), ...
+                mean(T.elev_ledge_m, 'omitnan'), mean(T.elev_redge_m, 'omitnan'), mean(T.elev_trough_m, 'omitnan'), ...
+                100*mean(~T.valid_ledge), 100*mean(~T.valid_redge), 100*mean(~T.valid_trough), ...
+                'VariableNames', {'channel', 'end_found', 'length_km', 'no_profiles', ...
+                'mean_width_m', 'median_width_m', 'min_width_m', 'max_width_m', 'std_width_m', ...
+                'mean_hw_left_m', 'mean_hw_right_m', ...
+                'mean_depth_m', 'median_depth_m', 'max_depth_m', ...
+                'mean_elev_ledge_m', 'mean_elev_redge_m', 'mean_elev_trough_m', ...
+                'outliers_ledge_pct', 'outliers_redge_pct', 'outliers_trough_pct'})]; 
+        end
+        writetable(T_sum, append(tab_dir, file_prefix, 'channel_summary.csv'))
     end
 
     disp(append("Done writing files. Check '", append(results_dir, proj_subdir), "' for output. "))

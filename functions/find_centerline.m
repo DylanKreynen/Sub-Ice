@@ -24,7 +24,7 @@ function [x_cent, y_cent, cent_length, cent_info] = find_centerline(P_start, P_e
 % max_gradient = if newly found centerline segment exceeds this gradient, we assume we found
 %                a crack instead > take next best candidate as new centerline point [%]
 % window = window size for search profile smoothing [m] (will be rounded, set to 0 for no smoothing)
-% max_length_factor = controls when to stop looking for channel end point [-] (default: 1.75)
+% max_length_factor = controls when to stop looking for channel end point [-] (default: 2)
 %                     max. channel length = (max_length_factor)*(distance between start and end point)
 % max_recursions = max. no. of attempts with updated search parameters [-] (set to 1 for no recursion) (default = 1)
 % center_method = method to use to find next channel center line point (default "MinLocation" alternatively "MinValue")
@@ -49,7 +49,7 @@ function [x_cent, y_cent, cent_length, cent_info] = find_centerline(P_start, P_e
 % default parameter values
 default_search_step = 1000; 
 default_search_angle = 60; 
-default_max_length_factor = 1.75; 
+default_max_length_factor = 2; 
 default_max_gradient = 10; 
 default_window = 0; 
 default_max_recursions = 1; 

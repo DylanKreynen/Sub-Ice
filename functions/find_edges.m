@@ -176,6 +176,11 @@ if sg_window ~= 0 && mod(sg_window,2) == 0
     % make window odd
     sg_window = sg_window + 1; 
 end
+if sg_window ~= 0 && sg_window < 5
+    % Savitzky-Golay filter (degree 3) requires a window of at least 5 samples
+    disp(append("Profile smoothing window (sg_window) increased to the minimum of 5 samples (", string(5*samp_step), " m). "))
+    sg_window = 5; 
+end
 
 ledge_idx = NaN(no_profs, 1);    % left edge index ("upper" edge in previous versions)
 redge_idx = NaN(no_profs, 1);    % right edge index ("lower" edge in previous versions)

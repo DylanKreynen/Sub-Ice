@@ -77,31 +77,31 @@ max_recursions = 1;               % keep trying with slightly different search p
 % length of search segment = (search_angle/360)*2*pi*search_step
 
 % channel cross sectional profile parameters
-prof_length   = 6000;             % length of cross sectional profiles [m]
-prof_interval = 500;                % spacing between profiles along centerline [m]
+prof_length   = 8000;             % length of cross sectional profiles [m]
+prof_interval = 0;                % spacing between profiles along centerline [m]
                                   % (0 = one profile per centerline search segment)
 % channel edge parameters
 edge_method = "KneePoint";        % method to use to identify channel edges ("SlopeThreshold", "KneePoint" or "NearPeaks")
-knee_method = "LinearRegression"; % kneepoint algorithm to use ("LinearRegression" or "Kneedle", used with edge methods "KneePoint" and "NearPeaks")
-min_width = 500;                  % minimum channel width [m] (set to 0 for no minimum width)
-max_width = 0;                    % maximum channel width [m] (set to 0 for maximum width = prof_length)
-sg_window = 1000;                 % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing, Savitzky-Golay filter)
+knee_method = "Kneedle";          % kneepoint algorithm to use ("LinearRegression" or "Kneedle", used with edge methods "KneePoint" and "NearPeaks")
+min_width = 1000;                 % minimum channel width [m] (set to 0 for no minimum width; or [left right] min. distance from centerline per side)
+max_width = 8000;                 % maximum channel width [m] (set to 0 for maximum width = prof_length; or [left right] max. distance from centerline per side)
+sg_window = 500;                  % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing, Savitzky-Golay filter)
 m_window = 0;                     % window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing, median filter)
 
 slope_thr = 0.00;                 % slope threshold for identifying edge [deg] (only used when edge_method = "SlopeThreshold")
-peak_prom = 0.5;                  % MinPeakProm for findpeaks() [m], minimum prominence for channel edge (only used when edge_method = "NearPeaks")
+peak_prom = 0.25;                 % MinPeakProm for findpeaks() [m], minimum prominence for channel edge (only used when edge_method = "NearPeaks")
 keep_pks = 0;                     % prevent peaks from being adjusted by along-channel edge smoothing (0 or 1, only used when edge_method = "NearPeaks")
 
 % outlier filtering of edges (based on z-score)
-z_thr_elev = [1.5 1.5];           % z-score outlier threshold, elevation of edge (set to 0 to skip outlier identification)
+z_thr_elev = [0 0];               % z-score outlier threshold, elevation of edge (set to 0 to skip outlier identification)
                                   % optional: [left_thr right_thr] to use different thresholds for the left and right edge
-z_thr_idx = [1.5 1.5];            % z-score outlier threshold, profile index of edge (set to 0 to skip outlier identification)
+z_thr_idx = [1.75 1.75];          % z-score outlier threshold, profile index of edge (set to 0 to skip outlier identification)
                                   % optional: [left_thr right_thr] to use different thresholds for the left and right edge
 edge_subst_window = 5;            % window size for outlier substitution (moving median filter, set to 0 to leave out outliers altogether, default: 5)
 % note: set m_window = 0 (no edge smoothing) when filtering outliers
 
 % outlier filtering of trough depth (based on z-score)
-z_thr_trough_elev = 1.5;          % z-score outlier threshold, elevation of trough (set to 0 to skip outlier identification)
+z_thr_trough_elev = 0;            % z-score outlier threshold, elevation of trough (set to 0 to skip outlier identification)
 trough_subst_window = 3;          % window for outlier substitution (moving mean filter, set to 0 to leave out outliers altogether, default: 3)
 
 % some controls for the overview figure, related to edge outlier filtering

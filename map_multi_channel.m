@@ -463,7 +463,8 @@ for c = 1:no_channels
     % visualize
     % profile transects
     if plot_prof_transects == 1
-        scatter(x_prof{c}(:), y_prof{c}(:), 1, 'w')
+        % thin, semi-transparent white line from first to last profile point
+        plot(x_prof{c}([1 end], :), y_prof{c}([1 end], :), 'Color', [1 1 1 0.5], 'LineWidth', 0.5)
     end
     % centerlines
     scatter(x_cent{c}, y_cent{c}, 15, 'r', 'filled')

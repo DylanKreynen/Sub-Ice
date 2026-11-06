@@ -29,7 +29,7 @@
 % ice shelf DEM (GeoTIFF, projected coordinates in meters)
 path_to_DEM = './input/venable.tif';    % a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries.m
                                         % (time series: DEM filenames should end in the acquisition date, yyyymmdd, e.g. venable_20200115.tif)
-DEM_nodata = -9999;                     % DEM no data value
+DEM_nodata = -9999;                     % DEM no data value (read from the GeoTIFF where given; this value is used as well, as fallback)
 
 % channel start and end points
 start_end_method = 2;

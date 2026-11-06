@@ -115,9 +115,8 @@ if start_end_method == 1
     P_start_w = NaN(no_DEMs, 2);
     P_end_w = NaN(no_DEMs, 2);
     for t = 1:no_DEMs
-        [DEM, R] = readgeoraster(fullfile(path_to_DEM, DEM_files{t}));
+        [DEM, R] = read_dem(fullfile(path_to_DEM, DEM_files{t}), DEM_nodata);
         DEM = double(DEM);
-        DEM(DEM==DEM_nodata) = NaN;
         figure(1)
         clf
         plot_map_base(gca, DEM, R, 'clims', map_clims, 'hillshade', map_hillshade);
@@ -228,9 +227,8 @@ for t = 1:no_DEMs
 
     % read DEM from GeoTIFF, replace no data with NaN
     fn_DEM = fullfile(path_to_DEM, DEM_files{t});
-    [DEM, R] = readgeoraster(fn_DEM);
+    [DEM, R] = read_dem(fn_DEM, DEM_nodata);
     DEM = double(DEM);
-    DEM(DEM==DEM_nodata) = NaN;
     res = R.CellExtentInWorldX;     % resolution of DEM [m]
     res_t(t) = res;
 

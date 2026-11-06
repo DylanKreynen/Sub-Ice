@@ -73,16 +73,9 @@ end
 %% read DEM from GeoTIFF
 %  and smooth if required
 
-if path_to_DEM(end-3:end) ~= ".tif"
-    error("path_to_DEM should point to a single DEM .tif file (check in config.m). ")
-end
-
-% read from geotiff
-[DEM, R] = readgeoraster(path_to_DEM);
+% read from GeoTIFF, no data values set to NaN (see read_dem())
+[DEM, R] = read_dem(path_to_DEM, DEM_nodata);
 res = R.CellExtentInWorldX;     % resolution of DEM [m]
-
-% replace no data with NaN
-DEM(DEM==DEM_nodata) = NaN;
 disp("Loaded DEM. ")
 
 % smooth DEM for centerline mapping, if requested

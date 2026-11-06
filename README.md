@@ -1,4 +1,4 @@
-## Sub-Ice: DEM-based semi-automized mapping of ice shelf basal channels
+## Sub-Ice: DEM-based semi-automated mapping of ice shelf basal channels
 
 Mapping algorithm that returns ice shelf basal channels' centerline, outlines
 and cross sectional profiles; based on surface expressions in a DEM. 

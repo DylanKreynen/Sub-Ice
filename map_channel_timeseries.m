@@ -144,7 +144,8 @@ elseif start_end_method == 2
     x_startend = vertcat(S.X);
     y_startend = vertcat(S.Y);
     if rem(length(x_startend), 2) ~= 0
-        error('Found odd number of start and end points in shapefile. Please provide an even number of points, ordered channel start, end respectively. ');
+        error(append("Found an odd number of start and end points (", string(length(x_startend)), ") in ", path_to_start_end_shp, ". ", ...
+            "Points should be ordered start, end, start, end, ... (one pair per channel); a missing point would mix up all following pairs, so please check the shapefile. "));
     end
     even_idx = rem(1:length(x_startend), 2) == 0;
     P_start_w = [x_startend(~even_idx), y_startend(~even_idx)];

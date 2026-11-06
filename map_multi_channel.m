@@ -155,7 +155,8 @@ elseif start_end_method == 2
         P_start = [x_startend(~even_idx), y_startend(~even_idx)]; 
         P_end = [x_startend(even_idx), y_startend(even_idx)]; 
     else
-        error('Found odd number of start and end points in shapefile. Please provide an even number of points, ordered channel start, end respectively. '); 
+        error(append("Found an odd number of start and end points (", string(length(x_startend)), ") in ", path_to_start_end_shp, ". ", ...
+            "Points should be ordered start, end, start, end, ... (one pair per channel); a missing point would mix up all following pairs, so please check the shapefile. ")); 
     end 
 
     scatter(P_start(:,1), P_start(:,2), 'm', 'filled')

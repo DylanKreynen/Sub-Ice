@@ -42,10 +42,20 @@ clc
 
 %% run configuration file - set user specifiable parameters
 %  contains filepaths to input/output data, sets method to select channel
-%  start/end points, configures centerline search parameters, output 
-%  behaviour etc. > update configuration file as required! 
+%  start/end points, configures centerline search parameters, output
+%  behaviour etc. > update configuration file as required!
+%  (default: config.m; when run from run_batch.m: the configuration file
+%  passed on by run_batch.m)
 
-run 'config.m'
+config_fn = 'config.m';
+if isappdata(groot, 'subice_config_fn')
+    config_fn = getappdata(groot, 'subice_config_fn');
+    rmappdata(groot, 'subice_config_fn')    % (applies to this run only)
+end
+disp(append("Running Sub-Ice with configuration file ", config_fn, ". "))
+% (evaluated in the current folder: relative paths in the configuration
+% file are relative to the Sub-Ice folder, wherever the file is stored)
+eval(fileread(config_fn))
 
 % ensemble mode if sets of values are given for any of the search parameters
 ensemble_mode = any(cellfun(@numel, {window_DEM, search_step, search_angle, max_gradient, window_cent}) > 1); 

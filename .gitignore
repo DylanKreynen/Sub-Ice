@@ -31,5 +31,6 @@
 !input/venable_start_end_timeseries.shx
 !map_channel_timeseries.m
 !map_multi_channel.m
+!run_batch.m
 !output/
 !output/fig_readme.png

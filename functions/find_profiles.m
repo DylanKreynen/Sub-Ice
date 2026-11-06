@@ -18,6 +18,9 @@ function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, vara
 % prof_length   = length of cross sectional profiles [m] (default: 2500m)
 % prof_interval = spacing between profiles along centerline [m] (default: 0,
 %                 meaning one profile per centerline segment at its midpoint)
+%                 profiles are perpendicular to the local centerline segment;
+%                 profiles that fall on a centerline vertex are perpendicular
+%                 to the mean direction of the two segments meeting there
 %
 % output:
 % profiles = matrix containing profiles' sampled elevation [m]
@@ -97,23 +100,55 @@ else
     x_prof   = NaN(no_samp_pts+1, no_profiles);
     y_prof   = NaN(no_samp_pts+1, no_profiles);
 
+    % unit direction vectors of centerline segments
+    unit_dx_seg = dx ./ seg_lengths;
+    unit_dy_seg = dy ./ seg_lengths;
+
+    % tolerance for a profile position to count as lying on a vertex [pix]
+    % (positions often coincide with vertices, as segments are one search
+    % step long; without this, rounding errors would decide which of the
+    % two segments the profile is perpendicular to)
+    vertex_tol = 1e-6;
+
     for i = 1:no_profiles
         s = prof_s(i);
 
-        % find which centerline segment this position falls in
-        seg_idx = find(cum_length <= s, 1, 'last');
-        seg_idx = min(seg_idx, length(x_cent)-1);  % clamp to last valid segment
+        [dist_vertex, v] = min(abs(cum_length - s));
+        if dist_vertex < vertex_tol && v > 1 && v < length(x_cent)
+            % profile on an interior vertex: position at the vertex, direction
+            % = mean of the directions of the segments before and after it
+            x_pos = x_cent(v);
+            y_pos = y_cent(v);
+            unit_dx = unit_dx_seg(v-1) + unit_dx_seg(v);
+            unit_dy = unit_dy_seg(v-1) + unit_dy_seg(v);
+            norm_dir = sqrt(unit_dx^2 + unit_dy^2);
+            if norm_dir > 0
+                unit_dx = unit_dx/norm_dir;
+                unit_dy = unit_dy/norm_dir;
+            else
+                % (segments in opposite directions: take segment after vertex)
+                unit_dx = unit_dx_seg(v);
+                unit_dy = unit_dy_seg(v);
+            end
 
-        % interpolate position along segment
-        frac  = (s - cum_length(seg_idx)) / seg_lengths(seg_idx);
-        x_pos = x_cent(seg_idx) + frac * (x_cent(seg_idx+1) - x_cent(seg_idx));
-        y_pos = y_cent(seg_idx) + frac * (y_cent(seg_idx+1) - y_cent(seg_idx));
+        else
+            % find which centerline segment this position falls in
+            seg_idx = find(cum_length <= s, 1, 'last');
+            seg_idx = min(seg_idx, length(x_cent)-1);  % clamp to last valid segment
+
+            % interpolate position along segment
+            frac  = (s - cum_length(seg_idx)) / seg_lengths(seg_idx);
+            x_pos = x_cent(seg_idx) + frac * (x_cent(seg_idx+1) - x_cent(seg_idx));
+            y_pos = y_cent(seg_idx) + frac * (y_cent(seg_idx+1) - y_cent(seg_idx));
+
+            % local segment direction
+            unit_dx = unit_dx_seg(seg_idx);
+            unit_dy = unit_dy_seg(seg_idx);
+        end
 
         % build synthetic P1/P2 centered at profile position, aligned with the
-        % local segment direction (profile_query_pts uses their midpoint and
-        % the perpendicular of their connecting direction)
-        unit_dx = (x_cent(seg_idx+1) - x_cent(seg_idx)) / seg_lengths(seg_idx);
-        unit_dy = (y_cent(seg_idx+1) - y_cent(seg_idx)) / seg_lengths(seg_idx);
+        % local direction (profile_query_pts uses their midpoint and the
+        % perpendicular of their connecting direction)
         P1 = [x_pos - 0.5*unit_dx, y_pos - 0.5*unit_dy];
         P2 = [x_pos + 0.5*unit_dx, y_pos + 0.5*unit_dy];
 

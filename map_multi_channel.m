@@ -292,17 +292,17 @@ if ensemble_mode
         DEM_smooth = smooth_dem(DEM, res, window_DEM(w), path_to_DEM);
         for k = 1:no_comb
             member = member + 1; 
-            disp(append("Ensemble member ", string(member), "/", string(no_members), ...
-                ": window_DEM = ", string(window_DEM(w)), ", search_step = ", string(g_step(k)), ", search_angle = ", string(g_angle(k)), ...
-                ", max_gradient = ", string(g_grad(k)), ", window_cent = ", string(g_wcent(k)), ". "))
+            no_connected = 0; 
             for c = 1:no_channels
                 [x_c, y_c, ~, info_c] = find_centerline(P_start(c,:), P_end(c,:), DEM_smooth, R, ... 
                                                     'search_step',      g_step(k), ... 
                                                     'search_angle',     g_angle(k), ... 
                                                     'max_gradient',     g_grad(k), ... 
                                                     'window',           g_wcent(k), ...
-                                                    'max_recursions',   max_recursions); 
+                                                    'max_recursions',   max_recursions, ...
+                                                    'verbose',          false); 
                 if info_c.end_found
+                    no_connected = no_connected + 1; 
                     ens_x{end+1, 1} = x_c; 
                     ens_y{end+1, 1} = y_c; 
                     ens_channel(end+1, 1) = c; 
@@ -313,6 +313,10 @@ if ensemble_mode
                     no_success(c) = no_success(c) + 1; 
                 end
             end
+            disp(append("Ensemble member ", string(member), "/", string(no_members), ...
+                " (window_DEM = ", string(window_DEM(w)), ", search_step = ", string(g_step(k)), ", search_angle = ", string(g_angle(k)), ...
+                ", max_gradient = ", string(g_grad(k)), ", window_cent = ", string(g_wcent(k)), "): ", ...
+                string(no_connected), "/", string(no_channels), " channels connected. "))
         end
     end
 
@@ -401,8 +405,6 @@ channel_status = zeros(no_channels, 1);
 
 % loop over channels
 for c = 1:no_channels
-    disp(append("Start mapping channel geometry of ", channel_label(c), ". ")) 
-    
     if start_end_method == 4
         % centerline loaded from shapefile
         x_cent{c} = x_load{c}; 
@@ -419,14 +421,12 @@ for c = 1:no_channels
                                                     'search_angle',     search_angle, ... 
                                                     'max_gradient',     max_gradient, ... 
                                                     'window',           window_cent, ...
-                                                    'max_recursions',   max_recursions); 
+                                                    'max_recursions',   max_recursions, ...
+                                                    'verbose',          false); 
 
         % did we reach the channel end point?
         % (if not, continue with the centerline of the last attempt)
         channel_status(c) = cent_info{c}.end_found;
-        if ~channel_status(c)
-            disp(append("Warning: end point of ", channel_label(c), " not reached. Continuing with the centerline of the last attempt (", string(round(sum(cent_length)*res/1000, 1)), " km). "))
-        end
     end
     channel_length{c} = sum(cent_length);       % in [pix]
     channel_length{c} = channel_length{c}*res;  % in [m]
@@ -450,7 +450,8 @@ for c = 1:no_channels
                                                 'keep_pks',         keep_pks, ...
                                                 'z_thr_elev',       z_thr_elev, ...
                                                 'z_thr_idx',        z_thr_idx, ...
-                                                'edge_subst_window', edge_subst_window);
+                                                'edge_subst_window', edge_subst_window, ...
+                                                'verbose',          c == 1);     % (messages once, not per channel)
 
     % find channel trough elevation and depth
     [trough_elev{c}, trough_depth{c}, valid_trough{c}] = find_trough(profiles{c}, edge_elev{c}, ...
@@ -459,10 +460,21 @@ for c = 1:no_channels
 
     % label for shapefile
     fchannel{c} = channel_label(c); 
-    
+
+    % progress: one line per channel
+    msg = append("Mapped ", channel_label(c), " (", string(c), "/", string(no_channels), "): centerline ", ...
+        string(round(channel_length{c}/1000, 1)), " km, ", string(size(profiles{c}, 2)), " profiles. "); 
+    if ~channel_status(c)
+        msg = append(msg, "Warning: end point not reached, continued with the centerline of the last attempt. "); 
+    end
+    disp(msg)
 end
 
 disp(append("Finished mapping. End point reached for ", string(sum(channel_status)), "/", string(length(channel_status)), " channels. "))
+if any(~channel_status)
+    disp(append("Warning: end point not reached for ", strjoin(channel_label(~channel_status), ", "), ...
+        " (continued with the centerline of the last attempt; check these centerlines, or try other search parameters or ensemble mode). "))
+end
 
 
 %% overview figure

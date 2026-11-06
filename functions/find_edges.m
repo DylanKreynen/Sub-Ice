@@ -53,7 +53,8 @@ function [edge_idx, edge_coord, edge_elev, valid_edges, alongprof] = find_edges(
 %               optional: [left_thr right_thr] to use different thresholds for the left and right edge
 % z_thr_idx =   z-score outlier threshold, profile index of edge (set to 0 to skip outlier identification, default: 0)
 %               optional: [left_thr right_thr] to use different thresholds for the left and right edge
-% edge_subst_window = window size for outlier substitution (moving median filter, set to 0 to leave out outliers altogether, default: 5)  
+% edge_subst_window = window size for outlier substitution (moving median filter, set to 0 to leave out outliers altogether, default: 5)
+% verbose = print messages, e.g. on an adjusted smoothing window (default: true)  
 %
 % output: 
 % edge_idx = matrix containing profile indices corr. to channel edges [-]
@@ -120,6 +121,7 @@ addOptional(p, 'knee_method', default_knee_method, validKneeMethod)
 addOptional(p, 'z_thr_elev', default_z_thr_elev, validMaxMinWidths)
 addOptional(p, 'z_thr_idx', default_z_thr_idx, validMaxMinWidths)
 addOptional(p, 'edge_subst_window', default_edge_subst_window, validScalarPosNum)
+addOptional(p, 'verbose', true, @(x) islogical(x) || isnumeric(x))
 parse(p, profiles, x_prof, y_prof, res, varargin{:}); 
 
 slope_thr = p.Results.slope_thr; 
@@ -134,6 +136,7 @@ knee_method = p.Results.knee_method;
 z_thr_elev = p.Results.z_thr_elev; 
 z_thr_idx = p.Results.z_thr_idx; 
 edge_subst_window = p.Results.edge_subst_window; 
+verbose = p.Results.verbose; 
 
 
 %% actual function
@@ -178,7 +181,9 @@ if sg_window ~= 0 && mod(sg_window,2) == 0
 end
 if sg_window ~= 0 && sg_window < 5
     % Savitzky-Golay filter (degree 3) requires a window of at least 5 samples
-    disp(append("Profile smoothing window (sg_window) increased to the minimum of 5 samples (", string(5*samp_step), " m). "))
+    if verbose
+        disp(append("Note: profile smoothing window (sg_window) increased to the minimum of 5 samples (", string(5*samp_step), " m). "))
+    end
     sg_window = 5; 
 end
 

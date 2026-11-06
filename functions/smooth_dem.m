@@ -24,7 +24,6 @@ function DEM_smooth = smooth_dem(DEM, res, window_DEM, path_to_DEM)
 if window_DEM == 0
     % no smoothing requested
     DEM_smooth = DEM;
-    disp("No DEM smoothing requested. ")
     return
 end
 

@@ -225,7 +225,6 @@ if edge_method ~= "SlopeThreshold"
 end
 
 for t = 1:no_DEMs
-    disp(append("Start mapping channel geometry on ", date_label(t), " (", DEM_files{t}, "). "))
 
     % read DEM from GeoTIFF, replace no data with NaN
     fn_DEM = fullfile(path_to_DEM, DEM_files{t});
@@ -252,15 +251,13 @@ for t = 1:no_DEMs
                                                     'search_angle',     search_angle, ...
                                                     'max_gradient',     max_gradient, ...
                                                     'window',           window_cent, ...
-                                                    'max_recursions',   max_recursions);
+                                                    'max_recursions',   max_recursions, ...
+                                                    'verbose',          false);
         clear DEM_smooth
 
         % did we reach the channel end point?
         % (if not, continue with the centerline of the last attempt)
         channel_status(t) = cent_info{t}.end_found;
-        if ~channel_status(t)
-            disp(append("Warning: end point not reached on ", date_label(t), ". Continuing with the centerline of the last attempt (", string(round(sum(cent_length)*res/1000, 1)), " km). "))
-        end
     end
     channel_length{t} = sum(cent_length)*res;   % [m]
 
@@ -282,7 +279,8 @@ for t = 1:no_DEMs
                                                 'keep_pks',         keep_pks, ...
                                                 'z_thr_elev',       z_thr_elev, ...
                                                 'z_thr_idx',        z_thr_idx, ...
-                                                'edge_subst_window', edge_subst_window);
+                                                'edge_subst_window', edge_subst_window, ...
+                                                'verbose',          t == 1);     % (messages once, not per date)
 
     % find channel trough elevation and depth
     [trough_elev{t}, ~, valid_trough{t}] = find_trough(profiles{t}, edge_elev{t}, ...
@@ -341,10 +339,22 @@ for t = 1:no_DEMs
     [edge_coord_w{t}(:,1), edge_coord_w{t}(:,2)] = intrinsicToWorld(R, edge_coord(:,1), edge_coord(:,2));
     [edge_coord_w{t}(:,3), edge_coord_w{t}(:,4)] = intrinsicToWorld(R, edge_coord(:,3), edge_coord(:,4));
 
+    % progress: one line per date
+    msg = append("Mapped ", date_label(t), " (", string(t), "/", string(no_DEMs), ", ", DEM_files{t}, "): centerline ", ...
+        string(round(channel_length{t}/1000, 1)), " km, ", string(size(profiles{t}, 2)), " profiles. ");
+    if ~channel_status(t)
+        msg = append(msg, "Warning: end point not reached, continued with the centerline of the last attempt. ");
+    end
+    disp(msg)
+
     pause(0.01) % (force matlab to plot)
 end
 
 disp(append("Finished mapping all dates. End point reached for ", string(sum(channel_status)), "/", string(no_DEMs), " dates. "))
+if any(~channel_status)
+    disp(append("Warning: end point not reached for ", strjoin(date_label(~channel_status), ", "), ...
+        " (continued with the centerline of the last attempt; check these centerlines, or try other search parameters). "))
+end
 
 
 %% all dates together

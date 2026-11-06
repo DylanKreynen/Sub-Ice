@@ -28,6 +28,7 @@ function [x_cent, y_cent, cent_length, cent_info] = find_centerline(P_start, P_e
 %                     max. channel length = (max_length_factor)*(distance between start and end point)
 % max_recursions = max. no. of attempts with updated search parameters [-] (set to 1 for no recursion) (default = 1)
 % center_method = method to use to find next channel center line point (default "MinLocation" alternatively "MinValue")
+% verbose = print messages on the search attempts (default: true)
 %
 % output:
 % x_cent = vector with x coordinates of channel centerline [pix]
@@ -60,6 +61,7 @@ default_max_gradient = 10;
 default_window = 0; 
 default_max_recursions = 1; 
 default_center_method = "MinLocation"; 
+default_verbose = true; 
 
 % parse input arguments
 p = inputParser; 
@@ -78,6 +80,7 @@ addOptional(p, 'max_gradient', default_max_gradient, validScalarPosNum)
 addOptional(p, 'window', default_window, validScalarPosNum)
 addOptional(p, 'max_recursions', default_max_recursions, validScalarPosNum)
 addOptional(p, 'center_method', default_center_method, validCenterMethod)
+addOptional(p, 'verbose', default_verbose, @(x) islogical(x) || isnumeric(x))
 parse(p, P_start, P_end, DEM, R, varargin{:}); 
 
 search_step = p.Results.search_step; 
@@ -87,6 +90,7 @@ max_gradient = p.Results.max_gradient;
 window = p.Results.window; 
 max_recursions = p.Results.max_recursions; 
 center_method = p.Results.center_method; 
+verbose = p.Results.verbose; 
 
 
 %% actual function
@@ -276,7 +280,7 @@ if max_recursions > 1
     
     if cent_info.end_found
         % found channel end, exit function
-        disp("Found channel centerline on first try. ")
+        if verbose, disp("Found channel centerline on first try. "), end
         return
     else
         % flip start and end points and try again
@@ -288,7 +292,7 @@ if max_recursions > 1
                                                             'max_gradient',     max_gradient, ...
                                                             'window',           window_m, ...
                                                             'max_length_factor',max_length_factor, ...
-                                                            'center_method',    center_method);
+                                                            'center_method',    center_method, 'verbose', false);
         cent_info.reversed = 1;
         cent_info.attempt = it_no;
         if cent_info.end_found
@@ -296,7 +300,7 @@ if max_recursions > 1
             x_cent = flip(x_cent);
             y_cent = flip(y_cent);
             cent_length = flip(cent_length);
-            disp("Found channel centerline on second try (reversed). ")
+            if verbose, disp("Found channel centerline on second try (reversed). "), end
             return
         end
     end
@@ -320,12 +324,12 @@ if max_recursions > 1
                                                             'max_gradient',     loop_max_gradient, ...
                                                             'window',           loop_window, ...
                                                             'max_length_factor',max_length_factor, ...
-                                                            'center_method',    center_method);
+                                                            'center_method',    center_method, 'verbose', false);
         cent_info.perturbed = 1;
         cent_info.attempt = it_no;
         if cent_info.end_found
             % found channel end, exit function
-            disp(append("Found channel centerline on recursion no. ", string(it_no), ". "))
+            if verbose, disp(append("Found channel centerline on recursion no. ", string(it_no), ". ")), end
             return
         else
             % flip start and end points and try again
@@ -336,7 +340,7 @@ if max_recursions > 1
                                                                 'max_gradient',     loop_max_gradient, ...
                                                                 'window',           loop_window, ...
                                                                 'max_length_factor',max_length_factor, ...
-                                                                'center_method',    center_method);
+                                                                'center_method',    center_method, 'verbose', false);
             cent_info.reversed = 1;
             cent_info.perturbed = 1;
             cent_info.attempt = it_no;
@@ -345,7 +349,7 @@ if max_recursions > 1
                 x_cent = flip(x_cent);
                 y_cent = flip(y_cent);
                 cent_length = flip(cent_length);
-                disp(append("Found channel centerline on recursion no. ", string(it_no), " (reversed). "))
+                if verbose, disp(append("Found channel centerline on recursion no. ", string(it_no), " (reversed). ")), end
                 return
             end
         end
@@ -358,9 +362,9 @@ end
 
 if ~cent_info.end_found
     if max_recursions > 1
-        disp("Warning: did not reach channel end (exceeded max. no. of centerline search recursions). Returning last attempt. ")
+        if verbose, disp("Warning: did not reach channel end (exceeded max. no. of centerline search recursions). Returning last attempt. "), end
     else
-        disp("Warning: did not reach channel end. Returning centerline found so far. ")
+        if verbose, disp("Warning: did not reach channel end. Returning centerline found so far. "), end
     end
     if cent_info.reversed
         % last attempt searched from end to start point: flip

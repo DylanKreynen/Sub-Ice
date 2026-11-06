@@ -104,7 +104,9 @@ edge_subst_window = 5;            % window size for outlier substitution (moving
 z_thr_trough_elev = 0;            % z-score outlier threshold, elevation of trough (set to 0 to skip outlier identification)
 trough_subst_window = 3;          % window for outlier substitution (moving mean filter, set to 0 to leave out outliers altogether, default: 3)
 
-% some controls for the overview figure, related to edge outlier filtering
+% some controls for the map figures
+map_hillshade = 1;                % add a hillshade to the DEM on map figures Y/N
+map_clims = [];                   % [min max] elevation for the DEM colors on map figures [m] ([] = automatic, 2nd-98th percentile within the map)
 plot_prof_transects = 1;          % plot profile transects on overview figure Y/N
 plot_edge_gaps = 1;               % plot across the gaps left after edge outlier filtering Y/N
 

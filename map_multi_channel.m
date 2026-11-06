@@ -92,16 +92,12 @@ end
 %  and end points from shapefile or enter img coordinates manually; or load
 %  existing channel centerlines from shapefile
 
-% color limits for visualisation (update as required)
-clims = [-20 80];              % [m]
+% figure style (colors, font sizes; see fig_style())
+sty = fig_style(); 
 
+% map of the DEM, to show start/end points (see plot_map_base())
 figure(1)
-imagesc(DEM, clims)
-hold on
-axis image
-colormap gray
-xlabel('x coord [pix]')
-ylabel('y coord [pix]')
+plot_map_base(gca, DEM, R, 'clims', map_clims, 'hillshade', map_hillshade); 
 text_offs = 3;  % [pix]
 
 if start_end_method == 1 
@@ -322,22 +318,28 @@ if ensemble_mode
         writetable(T_success, append(tab_dir, file_prefix, 'centerline_ensemble_success.csv'))
     end
 
-    % overview figure
+    % overview figure: all realizations, one color per channel, on the DEM
+    % (map extent: realizations and start/end points, plus a margin)
     f = figure(1); 
-    hold off
-    imagesc(DEM, clims)
-    axis image
-    colormap gray
-    title(append("centerline ensemble (", string(numel(ens_x)), " realizations)"))
-    xlabel('x coord [pix]')
-    ylabel('y coord [pix]')
-    hold on
+    clf(f)
+    ax_map = axes(f); 
+    all_x = [vertcat(ens_x{:}); P_start(:,1); P_end(:,1)]; 
+    all_y = [vertcat(ens_y{:}); P_start(:,2); P_end(:,2)]; 
+    margin = 0.1*max(max(all_x) - min(all_x), max(all_y) - min(all_y)); 
+    plot_map_base(ax_map, DEM, R, 'clims', map_clims, 'hillshade', map_hillshade, ...
+        'extent', [min(all_x)-margin, max(all_x)+margin, min(all_y)-margin, max(all_y)+margin]); 
+    ch_cols = sty.cmap_channels(no_channels); 
     for e = 1:numel(ens_x)
-        plot(ens_x{e}, ens_y{e}, 'r')
+        plot(ax_map, ens_x{e}, ens_y{e}, 'Color', [ch_cols(ens_channel(e),:) 0.6], 'LineWidth', sty.lw_thin, 'HandleVisibility', 'off')
     end
-    scatter(P_start(:,1), P_start(:,2), 'm', 'filled')
-    scatter(P_end(:,1), P_end(:,2), 'm', 'filled')
-    text(P_start(:,1) + text_offs, P_start(:,2) + text_offs, channel_label, 'Color', 'm')
+    scatter(ax_map, [P_start(:,1); P_end(:,1)], [P_start(:,2); P_end(:,2)], 12, sty.ink, 'filled', 'HandleVisibility', 'off')
+    for c = 1:no_channels
+        text(ax_map, P_start(c,1), P_start(c,2), append(" ", channel_label(c), " "), 'Color', sty.label, ...
+            'FontSize', sty.font_small, 'BackgroundColor', 'w', 'Margin', 0.5, ...
+            'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
+    end
+    panel_title(ax_map, "Centerline ensemble", append(string(numel(ens_x)), " realizations connecting start and end point (", ...
+        string(no_members), " parameter combinations x ", string(no_channels), " channels)"))
 
     if save_figs
         fn = append(fig_dir, file_prefix, 'centerline_ensemble'); 
@@ -370,16 +372,6 @@ end
 
 %% map channel geometries and extract profiles
 %  and visualize on overview figure
-
-f = figure(1); 
-hold off
-imagesc(DEM, clims)
-axis image
-colormap gray
-title('mapped channel geometries (overview)')
-xlabel('x coord [pix]')
-ylabel('y coord [pix]')
-hold on
 
 x_cent = cell(no_channels, 1);  
 y_cent = cell(no_channels, 1); 
@@ -458,39 +450,62 @@ for c = 1:no_channels
                                                 'z_thr',            z_thr_trough_elev, ...
                                                 'subst_window',     trough_subst_window); 
 
-    channel_width = (edge_idx{c}(:,1)-edge_idx{c}(:,2))*res; % [m]
-
-    % visualize
-    % profile transects
-    if plot_prof_transects == 1
-        % thin, semi-transparent white line from first to last profile point
-        plot(x_prof{c}([1 end], :), y_prof{c}([1 end], :), 'Color', [1 1 1 0.5], 'LineWidth', 0.5)
-    end
-    % centerlines
-    scatter(x_cent{c}, y_cent{c}, 15, 'r', 'filled')
-    plot(x_cent{c}, y_cent{c}, 'r')
-    % edges/outlines
-    scatter(edge_coord{c}(:,1), edge_coord{c}(:,2), 15, 'g', 'filled')
-    scatter(edge_coord{c}(:,3), edge_coord{c}(:,4), 15, 'g', 'filled')
-    if plot_edge_gaps == 1
-        lvalid = ~isnan(edge_coord{c}(:,1));
-        rvalid = ~isnan(edge_coord{c}(:,3));
-        plot(edge_coord{c}(lvalid,1), edge_coord{c}(lvalid,2), 'g')
-        plot(edge_coord{c}(rvalid,3), edge_coord{c}(rvalid,4), 'g')
-    else
-        plot(edge_coord{c}(:,1), edge_coord{c}(:,2), 'g')
-        plot(edge_coord{c}(:,3), edge_coord{c}(:,4), 'g')
-    end
-    % annotation
-    text(P_start(c,1) + text_offs, P_start(c,2) + text_offs, channel_label(c), 'Color', 'm')
-    pause(0.01) % (force matlab to plot)
-    
     % label for shapefile
     fchannel{c} = channel_label(c); 
     
 end
 
 disp(append("Finished mapping. End point reached for ", string(sum(channel_status)), "/", string(length(channel_status)), " channels. "))
+
+
+%% overview figure
+%  channel centerlines and the area between the channel edges, on the DEM
+%  (map extent: all profiles, plus a margin)
+
+f = figure(1); 
+clf(f)
+ax_map = axes(f); 
+all_x = [x_prof{:}]; 
+all_y = [y_prof{:}]; 
+all_x = all_x([1 end], :); 
+all_y = all_y([1 end], :); 
+margin = 0.05*max(max(all_x(:)) - min(all_x(:)), max(all_y(:)) - min(all_y(:))); 
+plot_map_base(ax_map, DEM, R, 'clims', map_clims, 'hillshade', map_hillshade, ...
+    'extent', [min(all_x(:))-margin, max(all_x(:))+margin, min(all_y(:))-margin, max(all_y(:))+margin]); 
+
+for c = 1:no_channels
+    % profile transects (thin line from first to last profile point)
+    if plot_prof_transects == 1
+        plot(ax_map, x_prof{c}([1 end], :), y_prof{c}([1 end], :), 'Color', [sty.ink 0.25], 'LineWidth', 0.5, 'HandleVisibility', 'off')
+    end
+    % channel area between the edges (with outlines along the edges)
+    shade_channel(ax_map, edge_coord{c}, sty.shade, sty.shade_alpha, sty.shade_outline*sty.shade, plot_edge_gaps == 1)
+end
+for c = 1:no_channels
+    % centerline
+    plot(ax_map, x_cent{c}, y_cent{c}, 'Color', sty.cent, 'LineWidth', sty.lw_data, 'HandleVisibility', 'off')
+end
+for c = 1:no_channels
+    % channel label at the upstream end
+    text(ax_map, x_cent{c}(1), y_cent{c}(1), append(" ", channel_label(c), " "), 'Color', sty.label, ...
+        'FontSize', sty.font_small, 'BackgroundColor', 'w', 'Margin', 0.5, ...
+        'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
+end
+
+% legend (proxy entries)
+h_leg = [plot(ax_map, NaN, NaN, 'Color', sty.cent, 'LineWidth', sty.lw_data), ...
+         patch(ax_map, NaN, NaN, sty.shade, 'FaceAlpha', sty.shade_alpha, 'EdgeColor', sty.shade_outline*sty.shade)]; 
+leg_txt = ["Centerline", "Channel (between edges)"]; 
+if plot_prof_transects == 1
+    h_leg(end+1) = plot(ax_map, NaN, NaN, 'Color', [sty.ink 0.25], 'LineWidth', 0.5); 
+    leg_txt(end+1) = "Cross-sectional profiles"; 
+end
+legend(ax_map, h_leg, leg_txt, 'Location', 'northeast', 'FontSize', sty.font_small, 'TextColor', sty.ink, 'Box', 'on', 'EdgeColor', sty.grid)
+edge_method_txt = string(edge_method); 
+if edge_method ~= "SlopeThreshold"
+    edge_method_txt = append(edge_method_txt, "-", knee_method);   % (knee point method also used by NearPeaks)
+end
+panel_title(ax_map, "Mapped channels", append(string(no_channels), " channels, edge detection: ", edge_method_txt))
 
 
 %% write to files

@@ -11,6 +11,7 @@
 !functions/channel_metrics.m
 !functions/channel_summary.m
 !functions/check_config.m
+!functions/check_points.m
 !functions/fig_style.m
 !functions/find_centerline.m
 !functions/find_edges.m

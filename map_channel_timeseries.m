@@ -196,6 +196,36 @@ if size(P_start_w, 1) ~= no_DEMs
     error(append("Number of start/end point pairs (", string(size(P_start_w, 1)), ") does not match number of DEMs (", string(no_DEMs), "). "))
 end
 
+% check start and end points against each DEM: skip dates with points
+% outside the DEM, warn for a different projection (see check_points())
+shp_in = "";
+if start_end_method == 2, shp_in = path_to_start_end_shp; end
+if start_end_method == 4, shp_in = path_to_centerline_shp; end
+keep = false(no_DEMs, 1);
+for t = 1:no_DEMs
+    R_t = georasterinfo(fullfile(path_to_DEM, DEM_files{t})).RasterReference;
+    [xs, ys] = worldToIntrinsic(R_t, P_start_w(t,1), P_start_w(t,2));
+    [xe, ye] = worldToIntrinsic(R_t, P_end_w(t,1), P_end_w(t,2));
+    inside = @(x, y) x >= 0.5 & x <= R_t.RasterSize(2) + 0.5 & y >= 0.5 & y <= R_t.RasterSize(1) + 0.5;
+    keep(t) = inside(xs, ys) & inside(xe, ye);
+    if t == 1
+        check_points(R_t, xs, ys, xe, ye, date_label(t), 'shp', shp_in, 'what', "date");   % (projection check, once)
+    end
+end
+if ~any(keep)
+    error("All start and end points lie outside their DEMs. Check that they are in the same projection as the DEMs (map coordinates in meters). ")
+elseif any(~keep)
+    disp(append("Warning: start or end point outside the DEM for date ", strjoin(date_label(~keep), ", "), ": skipped. "))
+    DEM_files = DEM_files(keep);
+    dates = dates(keep);
+    date_label = date_label(keep);
+    P_start_w = P_start_w(keep, :);
+    P_end_w = P_end_w(keep, :);
+    if height(attr_startend) == numel(keep), attr_startend = attr_startend(keep, :); end
+    if start_end_method == 4, xw_load = xw_load(keep); yw_load = yw_load(keep); end
+    no_DEMs = sum(keep);
+end
+
 
 %% map channel geometries and extract profiles
 %  one DEM at a time; geometries are kept in map coordinates (xw_..., yw_...)

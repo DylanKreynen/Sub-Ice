@@ -242,9 +242,22 @@ if ~exist('attr_startend', 'var')
 end
 
 % exclude channels, if requested
+keep = true(1, no_channels); 
 if ~isempty(excl_channel_labels)
     keep = ~ismember(channel_label, excl_channel_labels); 
     disp(append("Excluding ", string(sum(~keep)), " channel(s): ", strjoin(channel_label(~keep), ", "), ". "))
+end
+
+% check start and end points against the DEM: skip channels with points
+% outside the DEM, warn for points on no data or a different projection
+% (see check_points())
+shp_in = ""; 
+if start_end_method == 2, shp_in = path_to_start_end_shp; end
+if start_end_method == 4, shp_in = path_to_centerline_shp; end
+keep(keep) = check_points(R, P_start(keep,1), P_start(keep,2), P_end(keep,1), P_end(keep,2), channel_label(keep), ...
+    'DEM', DEM, 'shp', shp_in); 
+
+if any(~keep)
     P_start = P_start(keep, :); 
     P_end = P_end(keep, :); 
     channel_label = channel_label(keep); 

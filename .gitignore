@@ -18,6 +18,7 @@
 !functions/find_trough.m
 !functions/knee_pt.m
 !functions/lines_to_shp.m
+!functions/new_figure.m
 !functions/plot_map_base.m
 !functions/plot_overview_map.m
 !functions/plot_profile_figure.m

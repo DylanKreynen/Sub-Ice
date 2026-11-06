@@ -293,42 +293,47 @@ for t = 1:no_DEMs
         trough_elev{t}, valid_trough{t}, R, prof_interval);
 
     % map of this date
-    f = figure;
+    % (per date figures: not shown when saved to file, else docked; see new_figure())
+    f = new_figure([], save_figs);
     plot_overview_map(axes(f), DEM, R, {x_cent}, {y_cent}, {edge_coord}, {x_prof}, {y_prof}, date_label(t), ...
         'clims', map_clims, 'hillshade', map_hillshade, 'transects', plot_prof_transects == 1, ...
         'bridge_gaps', plot_edge_gaps == 1, 'title', append("Mapped channel, ", date_label(t)), ...
         'subtitle', append(DEM_files{t}, ", edge detection: ", edge_method_txt))
     if save_figs
         print(f, append(fig_dir, file_prefix, date_label(t), '_mapped_channel'), figs_filetype, figs_resolution)
+        close(f)
     end
 
     % extended figures of this date
     if ext_figs
         prof_dist_vector = ((1:size(profiles{t}, 1)) - (size(profiles{t}, 1)+1)/2)*res;
 
-        f = figure('Units', 'centimeters', 'Position', [2 2 18 10]);
-        plot_profile_figure(gca, prof_dist_vector, profiles{t}, edge_idx{t}, edge_elev{t}, ...
+        f = new_figure([18 10], save_figs);
+        plot_profile_figure(axes(f), prof_dist_vector, profiles{t}, edge_idx{t}, edge_elev{t}, ...
             'title', date_label(t), ...
             'subtitle', append("Cross-sectional profiles (", string(size(profiles{t}, 2)), "), looking upstream"), ...
             'min_width', min_width, 'max_width', max_width)
         if save_figs
             print(f, append(fig_dir, file_prefix, date_label(t), '_full_profiles_elev'), figs_filetype, figs_resolution)
+            close(f)
         end
 
-        f = figure('Units', 'centimeters', 'Position', [2 2 18 10]);
-        plot_profile_figure(gca, prof_dist_vector, profiles{t}, edge_idx{t}, edge_elev{t}, ...
+        f = new_figure([18 10], save_figs);
+        plot_profile_figure(axes(f), prof_dist_vector, profiles{t}, edge_idx{t}, edge_elev{t}, ...
             'relative', true, 'title', date_label(t), ...
             'subtitle', append("Cross-sectional profiles between the channel edges, looking upstream; mean depth below left edge: ", ...
                 string(round(mean(T_along{t}.depth_m, 'omitnan'), 1)), " m"), ...
             'min_width', min_width, 'max_width', max_width)
         if save_figs
             print(f, append(fig_dir, file_prefix, date_label(t), '_lim_profiles_depth'), figs_filetype, figs_resolution)
+            close(f)
         end
 
-        f = figure('Units', 'centimeters', 'Position', [2 2 18 13]);
+        f = new_figure([18 13], save_figs);
         plot_along_channel_figure(f, T_along{t}, date_label(t))
         if save_figs
             print(f, append(fig_dir, file_prefix, date_label(t), '_along_channel'), figs_filetype, figs_resolution)
+            close(f)
         end
     end
 
@@ -380,7 +385,7 @@ plot_overview_map(axes(f_all_map), DEM, R, x_cent_r, y_cent_r, edge_coord_r, x_p
     'bridge_gaps', plot_edge_gaps == 1, 'title', "Mapped channel, all dates", ...
     'subtitle', append(string(no_DEMs), " dates, on the DEM of ", date_label(end), ", edge detection: ", edge_method_txt))
 
-f_all = figure('Units', 'centimeters', 'Position', [2 2 18 16]);
+f_all = new_figure([18 16], save_figs);
 plot_along_all_figure(f_all, T_along, cellfun(@(P) mean(P, 1, 'omitnan')', profiles, 'UniformOutput', false), ...
     date_label, 'colors', date_cols, 'title', "All dates", 'subtitle', "Mean profile elevation, depth and width along the channel")
 
@@ -393,6 +398,7 @@ if save_figs || save_shps || save_tables
     if save_figs
         print(f_all_map, append(fig_dir, file_prefix, 'all_dates_mapped_channel'), figs_filetype, figs_resolution)
         print(f_all, append(fig_dir, file_prefix, 'all_dates_along_channel'), figs_filetype, figs_resolution)
+        close(f_all)
     end
 
     % write mapped geometries to shapefile (in image coordinates of the

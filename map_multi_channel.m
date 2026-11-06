@@ -596,21 +596,23 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         prof_dist_vector = ((1:size(profiles{c}, 1)) - (size(profiles{c}, 1)+1)/2)*res; 
 
         % full cross sectional profiles, absolute elevation
-        figure('Units', 'centimeters', 'Position', [2 2 18 10])
-        plot_profile_figure(gca, prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
+        % (extended figures: not shown when saved to file, else docked; see new_figure())
+        f_ext = new_figure([18 10], save_figs); 
+        plot_profile_figure(axes(f_ext), prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
             'title', channel_label(c), ...
             'subtitle', append("Cross-sectional profiles (", string(no_profiles), "), looking upstream"), ...
             'min_width', min_width, 'max_width', max_width)
 
         if save_figs
             fn = append(fig_dir, file_prefix, channel_label(c), '_full_profiles_elev');
-            print(fn, figs_filetype, figs_resolution)
+            print(f_ext, fn, figs_filetype, figs_resolution)
+            close(f_ext)
         end
 
         % cross sectional profiles between the channel edges, relative to
         % the left channel edge
-        figure('Units', 'centimeters', 'Position', [2 2 18 10])
-        plot_profile_figure(gca, prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
+        f_ext = new_figure([18 10], save_figs); 
+        plot_profile_figure(axes(f_ext), prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
             'relative', true, 'title', channel_label(c), ...
             'subtitle', append("Cross-sectional profiles between the channel edges, looking upstream; mean depth below left edge: ", ...
                 string(round(mean(edge_elev{c}(:,1) - trough_elev{c}, 'omitnan'), 1)), " m"), ...
@@ -618,7 +620,8 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
 
         if save_figs
             fn = append(fig_dir, file_prefix, channel_label(c), '_lim_profiles_depth'); 
-            print(fn, figs_filetype, figs_resolution)
+            print(f_ext, fn, figs_filetype, figs_resolution)
+            close(f_ext)
         end
         
         
@@ -627,24 +630,26 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         T_along{c} = channel_metrics(x_cent{c}, y_cent{c}, x_prof{c}, y_prof{c}, ...
             edge_idx{c}, edge_coord{c}, edge_elev{c}, valid_edges{c}, ...
             trough_elev{c}, valid_trough{c}, R, prof_interval); 
-        f_along = figure('Units', 'centimeters', 'Position', [2 2 18 13]); 
+        f_along = new_figure([18 13], save_figs); 
         plot_along_channel_figure(f_along, T_along{c}, channel_label(c))
 
         if save_figs
             fn = append(fig_dir, file_prefix, channel_label(c), '_along_channel');
             print(f_along, fn, figs_filetype, figs_resolution)
+            close(f_along)
         end
     end
     
     % all channels together: mean profile elevation, depth and width along
     % the channel (one color per channel)
-    f_all = figure('Units', 'centimeters', 'Position', [2 2 18 16]); 
+    f_all = new_figure([18 16], save_figs); 
     plot_along_all_figure(f_all, T_along, cellfun(@(P) mean(P, 1, 'omitnan')', profiles, 'UniformOutput', false), ...
         channel_label, 'title', "All channels", 'subtitle', "Mean profile elevation, depth and width along the channel")
     
     if save_figs
         fn = append(fig_dir, file_prefix, 'all_channels_along_channel'); 
         print(f_all, fn, figs_filetype, figs_resolution)
+        close(f_all)
     end
     
 end

@@ -28,7 +28,7 @@ cfg_defaults = {
     'save_figs',            0
     'fig_format',           'png'
     'fig_dpi',              500
-    'ext_figs',             1
+    'ext_figs',             0
     'save_shps',            0
     'save_tables',          0
     % channel start and end points

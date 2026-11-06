@@ -59,6 +59,8 @@ file_prefix = 'default_';               % (optional)
 save_figs = 0;                          % save figures Y/N
 save_shps = 0;                          % save centerlines, channel edges and profiles as shapefiles Y/N
 save_tables = 0;                        % save profiles and channel metrics as tables (.csv) Y/N
+ext_figs = 0;                           % extended figures: cross-sectional profiles and metrics along each channel Y/N
+                                        % (shown when not saved, saved without opening windows when save_figs = 1)
 
 
 %% 2. CENTERLINE SEARCH
@@ -123,7 +125,6 @@ shp_subdir = 'shp/';
 tab_subdir = 'tab/';
 fig_format = 'png';                     % figure file format (e.g. 'png', 'pdf', 'svg')
 fig_dpi = 500;                          % figure resolution [dpi]
-ext_figs = 1;                           % plot (and save) extended figures (profiles, metrics along channel) Y/N
 
 % optional channel selection
 shelf_filter = '';                      % filter start/end point shapefile on "Shelf" attribute (no filtering: '')

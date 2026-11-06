@@ -2,7 +2,7 @@ clear all
 close all
 clc
 
-%% Sub-Ice: DEM-based semi-automized mapping of ice shelf basal channels
+%% Sub-Ice: DEM-based semi-automated mapping of ice shelf basal channels
 %  Algorithm that returns ice shelf basal channels' centerline, outlines
 %  and cross sectional profiles; based on surface expressions in a DEM.
 %  This script maps a single channel over a time series of DEMs, given
@@ -10,7 +10,7 @@ clc
 %  channel centerlines (one per DEM). (See "map_multi_channel.m" for
 %  mapping one or more channels given a single DEM.)
 %
-%  The DEMs are read from a directory (path_to_DEM in config.m); the
+%  The DEMs are read from a directory (path_to_DEM in the configuration file); the
 %  acquisition date of each DEM is read from its filename, which should
 %  end in the date as yyyymmdd (e.g. "venable_20200115.tif"). DEMs are
 %  processed in chronological order. All other settings are as for
@@ -63,7 +63,7 @@ check_config
 
 % no ensemble mode for time series
 if any(cellfun(@numel, {window_DEM, search_step, search_angle, max_gradient, window_cent}) > 1)
-    error("Ensemble mode (sets of centerline search parameters in config.m) is not available for time series: give single values. ")
+    error("Ensemble mode (sets of centerline search parameters in the configuration file) is not available for time series: give single values. ")
 end
 
 % figure style (colors, font sizes; see fig_style())
@@ -74,7 +74,7 @@ sty = fig_style();
 %  and corresponding dates (from filename, ending in yyyymmdd)
 
 if endsWith(path_to_DEM, ".tif", 'IgnoreCase', true) || ~isfolder(path_to_DEM)
-    error("path_to_DEM should point to a directory with DEMs for map_channel_timeseries.m (check in config.m).")
+    error("path_to_DEM should point to a directory with DEMs for map_channel_timeseries.m (check in the configuration file).")
 end
 
 DEM_files = dir(fullfile(path_to_DEM, '*.tif'));
@@ -189,7 +189,7 @@ elseif start_end_method == 4
     attr_startend = removevars(attr_startend, vars(ismember(vars, {'date', 'dem_file'}) | startsWith(vars, "channel", 'IgnoreCase', true)));
 
 else
-    error('Specify a valid method to enter channel start/end points (under "user specifiable variables" in config.m). ')
+    error('Specify a valid method to enter channel start/end points (start_end_method in the configuration file). ')
 end
 
 % check if we have start/end points for all DEMs

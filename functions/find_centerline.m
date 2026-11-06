@@ -163,31 +163,17 @@ dist_to_end = stop_dist + 1;
 while dist_to_end > stop_dist % while we are far from end point, find next centerline point
     i = i + 1; 
     if i > max_no_cent_pts-1
-        %disp("Warning: did not reach channel end (exceeded max. centerline length). ")
+        % did not reach channel end (exceeded max. centerline length)
         break
     end
 
     [x_samp, y_samp] = centerline_query_pts([x_cent(i-2) y_cent(i-2)], [x_cent(i-1) y_cent(i-1)], res, search_step, search_angle, no_samp_pts, 0);
-    prof = DEM_int(y_samp, x_samp); % evaluate interpolant of 
+    prof = DEM_int(y_samp, x_samp); % evaluate interpolant of DEM along search profile
     % smooth profile using mean filter
     if window ~= 0
         prof = smoothdata(prof, 'movmean', window);
     end
     
-    % another idea: basal channels tend to be smooth, cracks sharp
-    % can we use that to distinguish between the channel and a crack? 
-    % e.g. make cross sectional profiles on the go and compare slopes
-
-    % another idea: if we don't reach the channel's end point, we could go
-    % back to the step where there were multiple centerline options
-    % (multiple minima) and go for the next best one and try again
-    % follow up: mark every centerline point with a confidence score? 
-
-    % observation: for a decent number of channels, things go wrong at the
-    % very first step because the channel is locally orientated in quite a
-    % different direction than the channel end point. idea: bigger search
-    % squat for first point
-
     % find all local min on profile
     local_min_loc = islocalmin(prof); % logical
 
@@ -207,10 +193,6 @@ while dist_to_end > stop_dist % while we are far from end point, find next cente
             % select local min with lowest absolute elevation
             [~, min_loc] = min(local_min_val);
             min_val_upd = prof(min_loc); 
-
-        %elseif center_method == "MinHybrid"
-            % select local min based on both location and absolute elevation
-            % TO DO: implement hybrid method
 
         else
             error("Invalid center_method. Check find_centerline() parameters, set center_method to 'MinLocation' or 'MinValue'.")
@@ -309,8 +291,10 @@ if max_recursions > 1
     % start disturbing the centerline search parameters (slightly)
     while it_no < max_recursions
         % jiggle input parameters
-        pret = randn(5, 1);      % preturbations, randomly drawn from normal distribution
-        pret = 1 + pret*0.05;    % rescale: small preturbations only
+        % (note: 5 values are drawn, the 3rd is not used; kept as is, so
+        % that the random draws, and thus results, remain the same)
+        pret = randn(5, 1);      % perturbations, randomly drawn from normal distribution
+        pret = 1 + pret*0.05;    % rescale: small perturbations only (std. dev. 5%)
         loop_search_step = pret(1)*search_step;
         loop_search_angle = pret(2)*search_angle;
         loop_max_gradient = pret(4)*max_gradient;

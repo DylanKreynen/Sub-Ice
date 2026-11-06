@@ -25,7 +25,7 @@ function [profiles, x_prof, y_prof] = find_profiles(x_cent, y_cent, DEM, R, vara
 % output:
 % profiles = matrix containing profiles' sampled elevation [m]
 % x_prof = matrix containing profiles' x coordinates [pix]
-% Y_prof = matrix containing profiles' y coordinates [pix]
+% y_prof = matrix containing profiles' y coordinates [pix]
 %
 % (c) Dylan Kreynen
 % University of Oslo
@@ -76,8 +76,8 @@ if prof_interval == 0
         P2 = [x_cent(i+1), y_cent(i+1)];
         % construct sampling vector, perpendicular to and at section mid point
         [x_prof(:,i), y_prof(:,i)] = profile_query_pts(P1, P2, res, samp_step, no_samp_pts);
-        % ATT! we might have to think about signs here, so profiles don't get flipped
-        % profile observer should always be facing either up or downstream (seems OK, but which side is which?)
+        % (consistent orientation: samples beyond the profile center lie on
+        % the left side of the channel, looking downstream; see profile_query_pts())
         profiles(:,i) = DEM_int(y_prof(:,i), x_prof(:,i));
     end
 

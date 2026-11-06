@@ -36,8 +36,9 @@ sampling_constr = samp_step*sampling_constr;
 % perpendicular direction: 
 sample_dir = [y_end-y_start, x_start-x_end]; 
 sample_dir = sample_dir./norm(sample_dir); 
-% ATT! we might have to think about signs here, so profiles don't get flipped
-% profile observer should always be facing either up or downstream (might already be OK)
+% (sampling points run from the right to the left hand side of the
+% direction from P_start to P_end: in Sub-Ice, profile samples beyond the
+% profile center lie on the left side of the channel, looking downstream)
 
 % sampling x and y coords: 
 x_samp = x_mid + sample_dir(1)*sampling_constr; 

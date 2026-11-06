@@ -1,6 +1,7 @@
-function [edge_idx, edge_coord, edge_elev, valid_edges, alongprof] = find_edges(profiles, x_prof, y_prof, res, varargin)
-%[edge_idx, edge_coord, edge_elev] = find_edges(profiles, x_prof, y_prof,
-%res, edge_method, slope_thr, slope_thr, min_width, max_width, peak_prom, sg_window, m_window)
+function [edge_idx, edge_coord, edge_elev, valid_edges] = find_edges(profiles, x_prof, y_prof, res, varargin)
+%[edge_idx, edge_coord, edge_elev, valid_edges] = find_edges(profiles, x_prof, y_prof, res, ...
+%    'edge_method', edge_method, 'knee_method', knee_method, 'min_width', min_width, ...)
+%(optional input as name-value pairs, see below)
 %
 % Returns indices of channel cross sectional profiles that correspond with
 % the channel's outer edges, based on either a slope threshold or knee point
@@ -174,7 +175,7 @@ for s = 1:2
 end
 
 slope_thr = deg2rad(slope_thr);         % from [deg] to [rad]
-sg_window = ceil(sg_window/samp_step);  % from [m] yo [-] (index)
+sg_window = ceil(sg_window/samp_step);  % from [m] to [-] (index)
 if sg_window ~= 0 && mod(sg_window,2) == 0
     % make window odd
     sg_window = sg_window + 1; 
@@ -202,26 +203,16 @@ relev = NaN(no_profs, 1);        % channel elevation at right edge of profile [m
 ledge_sm = true(no_profs, 1);
 redge_sm = true(no_profs, 1);
 
-% along profiles
-% TO DO: now hard coded, better would be based on channel width (?)
-alongprofidx = [250 500 750 1000 1250 1500]; % [m]
-alongprofidx = floor(alongprofidx./samp_step); 
-alongprof = NaN(no_profs, 2*length(alongprofidx)+1); 
-
 for i = 1:no_profs
 
     prof = profiles(:,i); 
-
-    % along profiles (no smoothing)
-    ralongprof = prof([no_pts no_pts+alongprofidx]);    % incl. "centerline"
-    lalongprof = prof(fliplr(alongprofidx));            % excl. "centerline"
-    alongprof(i,:) = [lalongprof' ralongprof']; 
 
     % smooth profile using Savitzky-Golay filter 
     if sg_window ~= 0
         prof = sgolayfilt(prof, 3, sg_window); 
     end
-    % note: should we only smooth for slope threshold method, or also kneepoint/nearpeaks?
+    % (smoothed profile used to detect edges with all methods; edge
+    % elevations are taken from the original profile)
 
     if edge_method == "SlopeThreshold"
         slope = gradient(prof, samp_step);  % slope in [rad] (small angle), w.r.t. increasing profile index

@@ -2,7 +2,7 @@ clear all
 close all
 clc
 
-%% Sub-Ice: DEM-based semi-automized mapping of ice shelf basal channels
+%% Sub-Ice: DEM-based semi-automated mapping of ice shelf basal channels
 %  Algorithm that returns ice shelf basal channels' centerline, outlines
 %  and cross sectional profiles; based on surface expressions in a DEM. 
 %  This script maps one or more channels given a single DEM and user
@@ -66,7 +66,7 @@ check_config
 % ensemble mode if sets of values are given for any of the search parameters
 ensemble_mode = any(cellfun(@numel, {window_DEM, search_step, search_angle, max_gradient, window_cent}) > 1); 
 if ensemble_mode && start_end_method == 4
-    error("Ensemble mode (sets of centerline search parameters in config.m) requires a centerline search: set start_end_method to 1, 2 or 3. ")
+    error("Ensemble mode (sets of centerline search parameters in the configuration file) requires a centerline search: set start_end_method to 1, 2 or 3. ")
 end
 
 
@@ -234,7 +234,7 @@ elseif start_end_method == 4
 
 
 else
-    error('Specify a valid method to enter channel start/end points (under "user specifiable variables" in config.m). ')
+    error('Specify a valid method to enter channel start/end points (start_end_method in the configuration file). ')
 end
 
 % no start point attributes, unless read from shapefile
@@ -361,7 +361,7 @@ if ensemble_mode
 
     if save_figs
         fn = append(fig_dir, file_prefix, 'centerline_ensemble'); 
-        print(fn, figs_filetype, figs_resolution)
+        print(f, fn, figs_filetype, figs_resolution)
     end
 
     % write ensemble to shapefile: all realizations of all channels in one
@@ -509,10 +509,8 @@ if save_figs || save_shps || save_tables
 
     % print overview figure to file
     if save_figs
-        %f.WindowState = 'maximized'; % make figure fullscreen before saving
         fn = append(fig_dir, file_prefix, 'mapped_channels'); 
-        print(fn, figs_filetype, figs_resolution)
-        %f.WindowState = 'normal'; 
+        print(f, fn, figs_filetype, figs_resolution)
     end
     
     % write mapped geometries to shapefile

@@ -129,15 +129,19 @@ if isprop(R, 'ProjectedCRS') && ~isempty(R.ProjectedCRS)
     u = [xi - mean(xl), yi - mean(yl)];
     if norm(u) > 0
         u = u/norm(u);                          % (image coordinates, y down)
-        len = 0.06*diff(yl);
+        len = 0.08*diff(yl);
         base =[x0 + sb_pix/2, y0 - 0.08*diff(yl) - 0.5*len] - 0.5*len*u;
         tip = base + len*u;
         n = [-u(2), u(1)];
         head = [tip; tip - 0.35*len*u + 0.18*len*n; tip - 0.35*len*u - 0.18*len*n];
+        % (white backing first, so the arrow stays visible on any background)
+        plot(ax, [base(1) tip(1)], [base(2) tip(2)], 'w', 'LineWidth', 4.5, 'HandleVisibility', 'off')
+        patch(ax, head(:,1), head(:,2), 'w', 'EdgeColor', 'w', 'LineWidth', 3, 'HandleVisibility', 'off')
         plot(ax, [base(1) tip(1)], [base(2) tip(2)], 'Color', S.ink, 'LineWidth', 1.5, 'HandleVisibility', 'off')
         patch(ax, head(:,1), head(:,2), S.ink, 'EdgeColor', S.ink, 'HandleVisibility', 'off')
-        text(ax, tip(1) + 0.3*len*u(1), tip(2) + 0.3*len*u(2), 'N', 'FontWeight', 'bold', 'Color', S.ink, ...
-            'FontSize', S.font, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle')
+        text(ax, tip(1) + 0.5*len*u(1), tip(2) + 0.5*len*u(2), 'N', 'FontWeight', 'bold', 'Color', S.ink, ...
+            'FontSize', S.font, 'BackgroundColor', 'w', 'Margin', 0.5, ...
+            'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle')
     end
 end
 

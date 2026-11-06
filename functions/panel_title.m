@@ -15,9 +15,9 @@ function panel_title(ax, ttl, sub)
 % 2026
 
 S = fig_style();
-title(ax, ttl, 'Color', S.ink, 'FontSize', S.font_title, 'FontWeight', 'bold')
+title(ax, ttl, 'Color', S.ink, 'FontSize', S.font_title, 'FontWeight', 'bold', 'Interpreter', 'none')
 if nargin > 2 && any(strlength(string(sub)) > 0)     % (sub can be multi-line: cell array)
-    subtitle(ax, sub, 'Color', S.muted, 'FontSize', S.font_small + 0.5)
+    subtitle(ax, sub, 'Color', S.muted, 'FontSize', S.font_small + 0.5, 'Interpreter', 'none')
 end
 ax.TitleHorizontalAlignment = 'left';
 

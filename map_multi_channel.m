@@ -335,7 +335,7 @@ if ensemble_mode
     scatter(ax_map, [P_start(:,1); P_end(:,1)], [P_start(:,2); P_end(:,2)], 12, sty.ink, 'filled', 'HandleVisibility', 'off')
     for c = 1:no_channels
         text(ax_map, P_start(c,1), P_start(c,2), append(" ", channel_label(c), " "), 'Color', sty.label, ...
-            'FontSize', sty.font_small, 'BackgroundColor', 'w', 'Margin', 0.5, ...
+            'FontSize', sty.font_small, 'BackgroundColor', 'w', 'Margin', 0.5, 'Interpreter', 'none', ...
             'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
     end
     panel_title(ax_map, "Centerline ensemble", append(string(numel(ens_x)), " realizations connecting start and end point (", ...
@@ -462,50 +462,18 @@ disp(append("Finished mapping. End point reached for ", string(sum(channel_statu
 %  channel centerlines and the area between the channel edges, on the DEM
 %  (map extent: all profiles, plus a margin)
 
-f = figure(1); 
-clf(f)
-ax_map = axes(f); 
-all_x = [x_prof{:}]; 
-all_y = [y_prof{:}]; 
-all_x = all_x([1 end], :); 
-all_y = all_y([1 end], :); 
-margin = 0.05*max(max(all_x(:)) - min(all_x(:)), max(all_y(:)) - min(all_y(:))); 
-plot_map_base(ax_map, DEM, R, 'clims', map_clims, 'hillshade', map_hillshade, ...
-    'extent', [min(all_x(:))-margin, max(all_x(:))+margin, min(all_y(:))-margin, max(all_y(:))+margin]); 
-
-for c = 1:no_channels
-    % profile transects (thin line from first to last profile point)
-    if plot_prof_transects == 1
-        plot(ax_map, x_prof{c}([1 end], :), y_prof{c}([1 end], :), 'Color', [sty.ink 0.25], 'LineWidth', 0.5, 'HandleVisibility', 'off')
-    end
-    % channel area between the edges (with outlines along the edges)
-    shade_channel(ax_map, edge_coord{c}, sty.shade, sty.shade_alpha, sty.shade_outline*sty.shade, plot_edge_gaps == 1)
-end
-for c = 1:no_channels
-    % centerline
-    plot(ax_map, x_cent{c}, y_cent{c}, 'Color', sty.cent, 'LineWidth', sty.lw_data, 'HandleVisibility', 'off')
-end
-for c = 1:no_channels
-    % channel label at the upstream end
-    text(ax_map, x_cent{c}(1), y_cent{c}(1), append(" ", channel_label(c), " "), 'Color', sty.label, ...
-        'FontSize', sty.font_small, 'BackgroundColor', 'w', 'Margin', 0.5, ...
-        'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom')
-end
-
-% legend (proxy entries)
-h_leg = [plot(ax_map, NaN, NaN, 'Color', sty.cent, 'LineWidth', sty.lw_data), ...
-         patch(ax_map, NaN, NaN, sty.shade, 'FaceAlpha', sty.shade_alpha, 'EdgeColor', sty.shade_outline*sty.shade)]; 
-leg_txt = ["Centerline", "Channel (between edges)"]; 
-if plot_prof_transects == 1
-    h_leg(end+1) = plot(ax_map, NaN, NaN, 'Color', [sty.ink 0.25], 'LineWidth', 0.5); 
-    leg_txt(end+1) = "Cross-sectional profiles"; 
-end
-legend(ax_map, h_leg, leg_txt, 'Location', 'northeast', 'FontSize', sty.font_small, 'TextColor', sty.ink, 'Box', 'on', 'EdgeColor', sty.grid)
+% edge detection method, for the subtitle
 edge_method_txt = string(edge_method); 
 if edge_method ~= "SlopeThreshold"
     edge_method_txt = append(edge_method_txt, "-", knee_method);   % (knee point method also used by NearPeaks)
 end
-panel_title(ax_map, "Mapped channels", append(string(no_channels), " channels, edge detection: ", edge_method_txt))
+
+f = figure(1); 
+clf(f)
+plot_overview_map(axes(f), DEM, R, x_cent, y_cent, edge_coord, x_prof, y_prof, channel_label, ...
+    'clims', map_clims, 'hillshade', map_hillshade, 'transects', plot_prof_transects == 1, ...
+    'bridge_gaps', plot_edge_gaps == 1, 'title', "Mapped channels", ...
+    'subtitle', append(string(no_channels), " channels, edge detection: ", edge_method_txt))
 
 
 %% write to files
@@ -584,18 +552,7 @@ if save_figs || save_shps || save_tables
             writetable(T_prof, append(tab_dir, file_prefix, channel_label(c), '_profiles.csv'))
 
             % summary statistics per channel
-            T_sum = [T_sum; table(channel_label(c), channel_status(c), channel_length{c}/1000, height(T), ...
-                mean(T.width_m, 'omitnan'), median(T.width_m, 'omitnan'), min(T.width_m), max(T.width_m), std(T.width_m, 'omitnan'), ...
-                mean(T.hw_left_m, 'omitnan'), mean(T.hw_right_m, 'omitnan'), ...
-                mean(T.depth_m, 'omitnan'), median(T.depth_m, 'omitnan'), max(T.depth_m), ...
-                mean(T.elev_ledge_m, 'omitnan'), mean(T.elev_redge_m, 'omitnan'), mean(T.elev_trough_m, 'omitnan'), ...
-                100*mean(~T.valid_ledge), 100*mean(~T.valid_redge), 100*mean(~T.valid_trough), ...
-                'VariableNames', {'channel', 'end_found', 'length_km', 'no_profiles', ...
-                'mean_width_m', 'median_width_m', 'min_width_m', 'max_width_m', 'std_width_m', ...
-                'mean_hw_left_m', 'mean_hw_right_m', ...
-                'mean_depth_m', 'median_depth_m', 'max_depth_m', ...
-                'mean_elev_ledge_m', 'mean_elev_redge_m', 'mean_elev_trough_m', ...
-                'outliers_ledge_pct', 'outliers_redge_pct', 'outliers_trough_pct'})]; 
+            T_sum = [T_sum; channel_summary(T, channel_label(c), channel_status(c), channel_length{c})]; 
         end
         writetable(T_sum, append(tab_dir, file_prefix, 'channel_summary.csv'))
     end
@@ -663,37 +620,8 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
     % all channels together: mean profile elevation, depth and width along
     % the channel (one color per channel)
     f_all = figure('Units', 'centimeters', 'Position', [2 2 18 16]); 
-    tl = tiledlayout(f_all, 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); 
-    ch_cols = sty.cmap_channels(no_channels); 
-    ax_all = gobjects(3, 1); 
-    y_lab = {'Mean profile elevation [m]', 'Depth below left edge [m]', 'Width [km]'}; 
-    for k = 1:3
-        ax_all(k) = nexttile(tl); 
-        hold(ax_all(k), 'on')
-        for c = 1:no_channels
-            d = T_along{c}.dist_along_m/1000; 
-            switch k
-                case 1, y = mean(profiles{c}, 1, 'omitnan')'; 
-                case 2, y = T_along{c}.depth_m; 
-                case 3, y = T_along{c}.width_m/1000; 
-            end
-            plot(ax_all(k), d, y, 'Color', ch_cols(c,:), 'LineWidth', sty.lw_data)
-        end
-        style_axis(ax_all(k))
-        ylabel(ax_all(k), y_lab{k}, 'Color', sty.ink)
-        if k == 2
-            ax_all(k).YDir = 'reverse';     % (depth positive down: deeper channel = lower line)
-        end
-        if k < 3
-            xticklabels(ax_all(k), {})
-        end
-    end
-    xlabel(ax_all(3), 'Distance along channel [km]', 'Color', sty.ink)
-    linkaxes(ax_all, 'x')
-    xlim(ax_all(1), [0, max(cellfun(@(T) max([T.dist_along_m; 1]), T_along))/1000])
-    panel_title(ax_all(1), "All channels", "Mean profile elevation, depth and width along the channel")
-    legend(ax_all(1), channel_label, 'Location', 'northoutside', 'Orientation', 'horizontal', ...
-        'Box', 'off', 'FontSize', sty.font_small, 'TextColor', sty.ink)
+    plot_along_all_figure(f_all, T_along, cellfun(@(P) mean(P, 1, 'omitnan')', profiles, 'UniformOutput', false), ...
+        channel_label, 'title', "All channels", 'subtitle', "Mean profile elevation, depth and width along the channel")
     
     if save_figs
         fn = append(fig_dir, file_prefix, 'all_channels_along_channel'); 

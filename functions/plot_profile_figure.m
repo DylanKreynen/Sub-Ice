@@ -92,11 +92,14 @@ hold(ax, 'on')
 % centerline and edge search limits (half widths, per side; left = positive)
 xline(ax, 0, ':', 'Color', S.muted, 'LineWidth', 0.6, 'HandleVisibility', 'off')
 h_lim = [];
-for w = {min_width, max_width}
-    lim = w{1};
+half_w = zeros(2, 2);       % [min; max] half widths [left right] [m]
+for k = 1:2
+    lim = {min_width, max_width};
+    lim = lim{k};
     if isscalar(lim)
         lim = lim/2*[1 1];
     end
+    half_w(k,:) = lim(:)';
     if any(lim > 0)
         h = xline(ax, [lim(1), -lim(2)], '--', 'Color', S.muted, 'LineWidth', 0.6);
         h_lim = h(1);
@@ -134,13 +137,37 @@ if strlength(string(ttl)) > 0
     panel_title(ax, ttl, sub)
 end
 
-% orientation (looking upstream: left edge on the right hand side)
+% orientation (looking upstream: left edge on the right hand side): side
+% labels just outside the min. width lines, and the viewing direction (flow
+% toward the viewer, out of the page) just inside the max. width line on the
+% left edge side, all at the bottom
+xl = xlim(ax);
 yl = ylim(ax);
-y_txt = yl(1) + 0.04*diff(yl);
-dx = 0.02*diff(xlim(ax));
-text(ax, -dx, y_txt, ['\leftarrow', ' right'], 'Color', S.muted, 'FontSize', S.font_small, 'HorizontalAlignment', 'right')
-text(ax, dx, y_txt, ['left ', '\rightarrow'], 'Color', S.muted, 'FontSize', S.font_small, 'HorizontalAlignment', 'left')
-text(ax, max(prof_dist) - dx, y_txt, 'view: upstream', 'Color', S.muted, 'FontSize', S.font_small, 'HorizontalAlignment', 'right')
+y_side = yl(1) + 0.035*diff(yl);
+x_min_l = half_w(1,1);
+x_min_r = -half_w(1,2);
+x_max_l = xl(2);
+if half_w(2,1) > 0
+    x_max_l = min(half_w(2,1), xl(2));
+end
+text(ax, x_min_r - 0.01*diff(xl), y_side, '\leftarrow right', 'Color', S.ink, 'FontSize', S.font_small, ...
+    'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom', 'Clipping', 'on')
+h_left = text(ax, x_min_l + 0.01*diff(xl), y_side, 'left \rightarrow', 'Color', S.ink, 'FontSize', S.font_small, ...
+    'HorizontalAlignment', 'left', 'VerticalAlignment', 'bottom', 'Clipping', 'on');
+h_view = text(ax, x_max_l - 0.015*diff(xl), y_side, 'view: upstream', 'Color', S.ink, 'FontSize', S.font_small, ...
+    'HorizontalAlignment', 'right', 'VerticalAlignment', 'bottom', 'Clipping', 'on');
+y_sym = y_side + 0.08*diff(yl);
+if sum(h_left.Extent([1 3])) > h_view.Extent(1) - 0.01*diff(xl)
+    % (note would run into 'left ->', e.g. in narrow plots: both higher)
+    h = h_view.Extent(4);
+    y_sym = y_sym + 1.3*h;
+    h_view.Position(2) = y_side + 1.9*h;
+end
+x_sym = h_view.Extent(1) + h_view.Extent(3)/2;
+plot(ax, x_sym, y_sym, 'o', 'MarkerSize', 9, 'MarkerEdgeColor', S.ink, 'LineWidth', 0.8, 'HandleVisibility', 'off')
+plot(ax, x_sym, y_sym, '.', 'MarkerSize', 9, 'Color', S.ink, 'HandleVisibility', 'off')
+xlim(ax, xl)
+ylim(ax, yl)
 
 % legend: highlighted profiles (normalized distance along channel), edges, limits
 hl_txt = compose("%.2f", hl_idx(:)/no_profiles);

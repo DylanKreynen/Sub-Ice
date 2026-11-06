@@ -19,9 +19,9 @@
 
 % ice shelf DEM (should be GeoTIFF)
 path_to_DEM = './input/venable.tif'; % to a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries.m
+                            % (time series: DEM filenames should end in the acquisition date, yyyymmdd, e.g. venable_20200115.tif)
 DEM_nodata = -9999;         % DEM no data value
 window_DEM = 0;             % window size for DEM smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing; or set of values for ensemble mode)
-                            % only works with map_multi_channel.m variations (TO DO: implement in map_channel_timeseries.m)
 
 % output behaviour: 
 results_dir = './output/';

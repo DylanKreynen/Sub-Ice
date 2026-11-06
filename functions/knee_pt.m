@@ -42,6 +42,8 @@ function [res_x, idx_of_result] = knee_pt(y, varargin)
 % Original function by Dmitry Kaplan
 % retrieved from MATLAB Central File Exchange
 % 2012
+% (https://www.mathworks.com/matlabcentral/fileexchange/35094-knee-point;
+% BSD license, Copyright (c) 2012, Dmitry Kaplan, see LICENSE)
 % 
 % Kneedle method by Adam Isaak 
 % University of Manitoba

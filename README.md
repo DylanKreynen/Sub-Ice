@@ -50,7 +50,8 @@ Sub-Ice is released under the MIT License (see *LICENSE*). The sample elevation 
 *input/venable.tif* is a clip of the Reference Elevation Model of Antarctica (REMA) 200 m mosaic,
 version 2 (Howat and others, 2022, doi: [10.7910/DVN/EBW8UC](https://doi.org/10.7910/DVN/EBW8UC)),
 and is licensed separately under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) (see
-*input/venable.tif_credit.txt*).
+*input/venable.tif_credit.txt*). *functions/knee_pt.m* is based on a function by Dmitry Kaplan
+(MATLAB Central File Exchange, BSD license, see *LICENSE*).
 
 
 \
@@ -64,3 +65,5 @@ originally a project at the International Summer School in Glaciology\
 project team members: Marcelo Santis & Dylan Kreynen\
 advisor: Karen Alley (University of Manitoba)\
 McCarthy (AK), June 2024
+
+NearPeaks-Kneedle edge detection method: Adam Isaak (University of Manitoba)

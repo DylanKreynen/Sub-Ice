@@ -615,61 +615,29 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         % cross sectional profiles
         no_profiles = size(profiles{c}, 2); 
         
-        % for plotting profiles with [m] on x-axis
-        prof_dist_vector = (1:size(profiles{c}, 1))*res; 
-        prof_dist_vector = prof_dist_vector - mean(prof_dist_vector);
-        valid_l = ~isnan(edge_idx{c}(:,1));
-        valid_r = ~isnan(edge_idx{c}(:,2));
-        ledge_pos = NaN(no_profiles, 1);
-        redge_pos = NaN(no_profiles, 1);
-        ledge_pos(valid_l) = prof_dist_vector(edge_idx{c}(valid_l, 1)');
-        redge_pos(valid_r) = prof_dist_vector(edge_idx{c}(valid_r, 2)');
-        edge_pos_vector = [ledge_pos(:), redge_pos(:)];
+        % distance of profile samples from profile center [m] (positive = left)
+        prof_dist_vector = ((1:size(profiles{c}, 1)) - (size(profiles{c}, 1)+1)/2)*res; 
 
-        % color gradient shared across both profile figures
-        cmap = parula(no_profiles);
-
-        % full cross sectional profiles using absolute elevation
-        figure
-        hold on
-        set(gca(), 'ColorOrder', cmap)
-        plot(prof_dist_vector, profiles{c}, 'LineWidth', 3)
-        xlabel('distance from profile center [m]')
-        ylabel('elevation [m]')
-        title(append(channel_label(c), ' cross sectional profiles (full, abs. heights)'))
-        hcb = colorbar;
-        title(hcb, 'norm. dist. along channel [-]')
-        plot(edge_pos_vector, edge_elev{c}, 'o', 'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'g', 'MarkerSize', 7)
+        % full cross sectional profiles, absolute elevation
+        figure('Units', 'centimeters', 'Position', [2 2 18 10])
+        plot_profile_figure(gca, prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
+            'title', channel_label(c), ...
+            'subtitle', append("Cross-sectional profiles (", string(no_profiles), "), looking upstream"), ...
+            'min_width', min_width, 'max_width', max_width)
 
         if save_figs
             fn = append(fig_dir, file_prefix, channel_label(c), '_full_profiles_elev');
             print(fn, figs_filetype, figs_resolution)
         end
 
-        % between channel edges using relative elevation (depth w.r.t. left channel edge)
-        figure
-        hold on
-        for i = 1:no_profiles
-            if isnan(edge_idx{c}(i,1)) || isnan(edge_idx{c}(i,2))
-                continue
-            end
-
-            prof = profiles{c}(:,i);
-
-            % replace values outside of channel edges to NaN (keep edge points)
-            prof(1:edge_idx{c}(i,2)-1) = NaN;
-            prof(edge_idx{c}(i,1)+1:end) = NaN;
-
-            % from absolute height to depth below left channel edge
-            prof = prof - edge_elev{c}(i,1);
-
-            plot(prof_dist_vector, prof, 'Color', cmap(i,:), 'LineWidth', 3)
-        end
-        xlabel('distance from profile center [m]')
-        ylabel('depth [m]')
-        title(append(channel_label(c), ' channel cross sectional profiles (depth below left edge)'))
-        hcb = colorbar;
-        title(hcb, 'norm. dist. along profile [-]')
+        % cross sectional profiles between the channel edges, relative to
+        % the left channel edge
+        figure('Units', 'centimeters', 'Position', [2 2 18 10])
+        plot_profile_figure(gca, prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
+            'relative', true, 'title', channel_label(c), ...
+            'subtitle', append("Cross-sectional profiles between the channel edges, looking upstream; mean depth below left edge: ", ...
+                string(round(mean(edge_elev{c}(:,1) - trough_elev{c}, 'omitnan'), 1)), " m"), ...
+            'min_width', min_width, 'max_width', max_width)
 
         if save_figs
             fn = append(fig_dir, file_prefix, channel_label(c), '_lim_profiles_depth'); 

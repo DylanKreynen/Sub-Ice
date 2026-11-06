@@ -16,6 +16,7 @@
 !functions/knee_pt.m
 !functions/lines_to_shp.m
 !functions/plot_map_base.m
+!functions/plot_profile_figure.m
 !functions/panel_title.m
 !functions/profile_query_pts.m
 !functions/shade_channel.m

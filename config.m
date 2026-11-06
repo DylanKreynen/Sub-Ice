@@ -73,7 +73,8 @@ search_step = 1500;               % distance to step away from last known center
 search_angle = 85;                % angle of view within to look for next centerline point [deg]
 max_gradient = 2;                 % if new centerline point's elevation exceeds max. gradient, pick next best point instead [%]
 window_cent = 20;                 % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
-max_recursions = 1;               % keep trying with slightly different search parameters in case channel end point is not found [-] (set to 0 or 1 for no recursion)
+max_recursions = 1;               % max. no. of centerline search attempts in case channel end point is not found [-] (1 = no retries, 2 = retry from end point only,
+                                  % > 2 = then keep retrying with randomly perturbed search parameters, see find_centerline())
 % length of search segment = (search_angle/360)*2*pi*search_step
 
 % channel cross sectional profile parameters

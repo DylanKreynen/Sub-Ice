@@ -2,8 +2,9 @@ clear all
 close all
 clc
 
-%% Sub-Ice: run map_multi_channel.m for a batch of configuration files
-%  Runs map_multi_channel.m once for every configuration file listed below
+%% Sub-Ice: run a main script for a batch of configuration files
+%  Runs map_multi_channel.m (or map_channel_timeseries.m, see main_script
+%  below) once for every configuration file listed below
 %  (or found in config_dir), e.g. to map channels on different ice shelves
 %  or DEMs, or with different settings. If a run fails, the error is
 %  reported and the batch continues with the next configuration file.
@@ -29,6 +30,9 @@ config_fns = [];
 config_dir = './config/';
 config_pattern = 'config*.m';
 
+% main script to run for each configuration file
+main_script = "map_multi_channel";      % "map_multi_channel" or "map_channel_timeseries"
+
 
 %% list configuration files
 
@@ -43,13 +47,13 @@ end
 disp(append("Found ", string(no_config), " configuration file(s) to run. "))
 
 
-%% run map_multi_channel.m for each configuration file
+%% run the main script for each configuration file
 
 run_ok = false(no_config, 1);
 run_msg = strings(no_config, 1);
 for i = 1:no_config
     disp(append("Configuration file ", string(i), "/", string(no_config), ": ", config_fns(i), ". "))
-    [run_ok(i), run_msg(i)] = run_one(config_fns(i));
+    [run_ok(i), run_msg(i)] = run_one(config_fns(i), main_script);
     close all
 end
 
@@ -59,9 +63,9 @@ disp(table(config_fns(:), run_ok, run_msg, 'VariableNames', {'config_file', 'suc
 
 %% local functions
 
-function [ok, msg] = run_one(config_fn)
-% run map_multi_channel.m with the given configuration file, in this
-% function's own workspace (map_multi_channel.m starts with "clear all",
+function [ok, msg] = run_one(config_fn, main_script)
+% run the main script with the given configuration file, in this
+% function's own workspace (the main scripts start with "clear all",
 % which would otherwise clear the batch list above)
     ok = false;
     msg = "";
@@ -72,8 +76,8 @@ function [ok, msg] = run_one(config_fn)
     end
     try
         setappdata(groot, 'subice_config_fn', char(config_fn))
-        map_multi_channel
-        % (variables of this function were cleared by map_multi_channel.m)
+        eval(char(main_script))
+        % (variables of this function were cleared by the main script)
         ok = true;
         msg = "";
     catch err

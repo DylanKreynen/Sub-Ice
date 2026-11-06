@@ -3,6 +3,7 @@
 
 # Un-ignore tracked files
 !.gitignore
+!LICENSE
 !README.md
 !config.m
 !functions/
@@ -45,3 +46,4 @@
 !run_batch.m
 !output/
 !output/fig_readme.png
+!output/fig_readme_dark.png

@@ -18,6 +18,7 @@
 !functions/plot_map_base.m
 !functions/plot_profile_figure.m
 !functions/panel_title.m
+!functions/plot_along_channel_figure.m
 !functions/profile_query_pts.m
 !functions/shade_channel.m
 !functions/smooth_dem.m

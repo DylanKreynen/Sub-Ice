@@ -609,6 +609,7 @@ end
 
 if ext_figs
 disp("Creating and possibly saving extended figures. Sit tight. ")
+    T_along = cell(no_channels, 1);     % channel metrics per profile, per channel
     
     for c = 1:no_channels
         
@@ -645,83 +646,58 @@ disp("Creating and possibly saving extended figures. Sit tight. ")
         end
         
         
-        % plotting some metrics along channel length
-        norm_dist_vector = (1:no_profiles)./no_profiles; 
-        
-        figure(10)
-        hold on
-        plot(norm_dist_vector*channel_length{c}/1000, mean(profiles{c}))
-        
-        channel_width = (edge_idx{c}(:,1)-edge_idx{c}(:,2))*res; % [m]
-
-        figure(11)
-        hold on
-        plot(norm_dist_vector*channel_length{c}/1000, trough_depth{c})
-        
-        figure(12)
-        hold on
-        plot(norm_dist_vector*channel_length{c}/1000, channel_width/1000)
-
-        % edge and trough elevation and depth along channel (one figure per channel)
-        figure
-
-        subplot(2, 1, 1)
-        hold on
-        plot(norm_dist_vector*channel_length{c}/1000, edge_elev{c}(:,1), 'Color', [0.0 0.6 0.0])
-        plot(norm_dist_vector*channel_length{c}/1000, edge_elev{c}(:,2), 'Color', [0.4 0.8 0.4])
-        plot(norm_dist_vector*channel_length{c}/1000, trough_elev{c},    'r')
-        ylabel('elevation [m]')
-        title(append(channel_label(c), ' edge and trough elevation along channel'))
-        legend('left edge', 'right edge', 'trough')
-
-        subplot(2, 1, 2)
-        hold on
-        plot(norm_dist_vector*channel_length{c}/1000, zeros(no_profiles, 1),                    'Color', [0.0 0.6 0.0])
-        plot(norm_dist_vector*channel_length{c}/1000, edge_elev{c}(:,2) - edge_elev{c}(:,1),   'Color', [0.4 0.8 0.4])
-        plot(norm_dist_vector*channel_length{c}/1000, trough_depth{c},                          'r')
-        xlabel('distance along channel [km]')
-        ylabel('depth w.r.t. left edge [m]')
-        legend('left edge', 'right edge', 'trough')
+        % channel geometry along the channel (one figure per channel)
+        % (metrics per profile, see channel_metrics())
+        T_along{c} = channel_metrics(x_cent{c}, y_cent{c}, x_prof{c}, y_prof{c}, ...
+            edge_idx{c}, edge_coord{c}, edge_elev{c}, valid_edges{c}, ...
+            trough_elev{c}, valid_trough{c}, R, prof_interval); 
+        f_along = figure('Units', 'centimeters', 'Position', [2 2 18 13]); 
+        plot_along_channel_figure(f_along, T_along{c}, channel_label(c))
 
         if save_figs
-            fn = append(fig_dir, file_prefix, channel_label(c), '_edge_trough_along_channel');
-            print(fn, figs_filetype, figs_resolution)
+            fn = append(fig_dir, file_prefix, channel_label(c), '_along_channel');
+            print(f_along, fn, figs_filetype, figs_resolution)
         end
     end
     
-    figure(10)
-    ylabel('elevation [m]')
-    xlabel('distance along channel [km]')
-    title('mean profile elevation (full) vs. distance along channel')
-    legend(channel_label)
-    
-    if save_figs
-        fn = append(fig_dir, file_prefix, 'elev_vs_distance_along_channel'); 
-        print(fn, figs_filetype, figs_resolution)
+    % all channels together: mean profile elevation, depth and width along
+    % the channel (one color per channel)
+    f_all = figure('Units', 'centimeters', 'Position', [2 2 18 16]); 
+    tl = tiledlayout(f_all, 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); 
+    ch_cols = sty.cmap_channels(no_channels); 
+    ax_all = gobjects(3, 1); 
+    y_lab = {'Mean profile elevation [m]', 'Depth below left edge [m]', 'Width [km]'}; 
+    for k = 1:3
+        ax_all(k) = nexttile(tl); 
+        hold(ax_all(k), 'on')
+        for c = 1:no_channels
+            d = T_along{c}.dist_along_m/1000; 
+            switch k
+                case 1, y = mean(profiles{c}, 1, 'omitnan')'; 
+                case 2, y = T_along{c}.depth_m; 
+                case 3, y = T_along{c}.width_m/1000; 
+            end
+            plot(ax_all(k), d, y, 'Color', ch_cols(c,:), 'LineWidth', sty.lw_data)
+        end
+        style_axis(ax_all(k))
+        ylabel(ax_all(k), y_lab{k}, 'Color', sty.ink)
+        if k == 2
+            ax_all(k).YDir = 'reverse';     % (depth positive down: deeper channel = lower line)
+        end
+        if k < 3
+            xticklabels(ax_all(k), {})
+        end
     end
-    
-    
-    figure(11)
-    ylabel('depth w.r.t. left channel edge [m]')
-    xlabel('distance along channel [km]')
-    title('channel depth vs. distance along channel')
-    legend(channel_label)
-    
-    if save_figs
-        fn = append(fig_dir, file_prefix, 'depth_vs_distance_along_channel'); 
-        print(fn, figs_filetype, figs_resolution)
-    end
-    
-    
-    figure(12)
-    ylabel('channel width [km]')
-    xlabel('distance along channel [km]')
-    title('channel width vs. distance along channel')
-    legend(channel_label)
+    xlabel(ax_all(3), 'Distance along channel [km]', 'Color', sty.ink)
+    linkaxes(ax_all, 'x')
+    xlim(ax_all(1), [0, max(cellfun(@(T) max([T.dist_along_m; 1]), T_along))/1000])
+    panel_title(ax_all(1), "All channels", "Mean profile elevation, depth and width along the channel")
+    legend(ax_all(1), channel_label, 'Location', 'northoutside', 'Orientation', 'horizontal', ...
+        'Box', 'off', 'FontSize', sty.font_small, 'TextColor', sty.ink)
     
     if save_figs
-        fn = append(fig_dir, file_prefix, 'width_vs_distance_along_channel'); 
-        print(fn, figs_filetype, figs_resolution)
+        fn = append(fig_dir, file_prefix, 'all_channels_along_channel'); 
+        print(f_all, fn, figs_filetype, figs_resolution)
     end
     
 end

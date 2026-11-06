@@ -36,8 +36,14 @@ function [x_cent, y_cent, cent_length, cent_info] = find_centerline(P_start, P_e
 % cent_info = struct with the search parameters of the (last) attempt, so the
 %             centerline can be reproduced: search_step [m], search_angle [deg],
 %             max_gradient [%], window [m], reversed (1 if found from end to
-%             start point), perturbed (1 if found with perturbed parameters)
-%             and attempt (attempt no., 1 = first try)
+%             start point), perturbed (1 if found with perturbed parameters),
+%             attempt (attempt no., 1 = first try) and end_found (1 if the
+%             centerline connects start and end point)
+%
+% note: if the end point is not reached (end_found = 0), the centerline of
+% the last attempt is returned: the centerline points found until the search
+% was aborted, without the end point (oriented from start towards end point,
+% also if the last attempt searched from end to start point)
 %
 % (c) Dylan Kreynen
 % University of Oslo
@@ -95,7 +101,7 @@ no_samp_pts = ceil(searchlen/res);
 % store search parameters as passed in (before unit conversion)
 cent_info = struct('search_step', search_step, 'search_angle', search_angle, ...
                    'max_gradient', max_gradient, 'window', window, ...
-                   'reversed', 0, 'perturbed', 0, 'attempt', 1);
+                   'reversed', 0, 'perturbed', 0, 'attempt', 1, 'end_found', 0);
 
 % no. of search segment pts in smoothing window [-]
 window_m = window;  % keep [m] for recursive calls
@@ -237,17 +243,29 @@ while dist_to_end > stop_dist % while we are far from end point, find next cente
     dist_to_end = sqrt((x_cent(i)-P_end(1))^2 + (y_cent(i)-P_end(2))^2); 
 end
 
-% add user specified end point to centerline: 
-x_cent(i+1) = P_end(1); 
-y_cent(i+1) = P_end(2); 
+if dist_to_end <= stop_dist
+    % reached end point
+    cent_info.end_found = 1;
 
-% strip of unnecessary NaNs: 
-x_cent = x_cent(1:i+1);
-y_cent = y_cent(1:i+1); 
+    % add user specified end point to centerline: 
+    x_cent(i+1) = P_end(1); 
+    y_cent(i+1) = P_end(2); 
 
-% compute and store last section lengths: 
-cent_length(i) = sqrt((x_cent(end-1)-x_cent(end))^2 + (y_cent(end-1)-y_cent(end))^2);
-cent_length = cent_length(1:i); 
+    % strip of unnecessary NaNs: 
+    x_cent = x_cent(1:i+1);
+    y_cent = y_cent(1:i+1); 
+
+    % compute and store last section lengths: 
+    cent_length(i) = sqrt((x_cent(end-1)-x_cent(end))^2 + (y_cent(end-1)-y_cent(end))^2);
+    cent_length = cent_length(1:i); 
+
+else
+    % search aborted (max. centerline length reached): keep the centerline
+    % points found so far (1 to i-1), without the end point
+    x_cent = x_cent(1:i-1);
+    y_cent = y_cent(1:i-1);
+    cent_length = cent_length(1:i-2);
+end
 
 
 %% keep trying! 
@@ -256,8 +274,7 @@ if max_recursions > 1
     % we should check whether we reached channel end, or if we need to try
     % again with slightly different search parameters
     
-    channel_length = sum(cent_length); % [pix]
-    if ~isnan(channel_length)
+    if cent_info.end_found
         % found channel end, exit function
         disp("Found channel centerline on first try. ")
         return
@@ -274,8 +291,7 @@ if max_recursions > 1
                                                             'center_method',    center_method);
         cent_info.reversed = 1;
         cent_info.attempt = it_no;
-        channel_length = sum(cent_length); % [pix]
-        if ~isnan(channel_length)
+        if cent_info.end_found
             % found channel end, flip and exit function
             x_cent = flip(x_cent);
             y_cent = flip(y_cent);
@@ -307,8 +323,7 @@ if max_recursions > 1
                                                             'center_method',    center_method);
         cent_info.perturbed = 1;
         cent_info.attempt = it_no;
-        channel_length = sum(cent_length); % [pix]
-        if ~isnan(channel_length)
+        if cent_info.end_found
             % found channel end, exit function
             disp(append("Found channel centerline on recursion no. ", string(it_no), ". "))
             return
@@ -325,8 +340,7 @@ if max_recursions > 1
             cent_info.reversed = 1;
             cent_info.perturbed = 1;
             cent_info.attempt = it_no;
-            channel_length = sum(cent_length); % [pix]
-            if ~isnan(channel_length)
+            if cent_info.end_found
                 % found channel end, flip and exit function
                 x_cent = flip(x_cent);
                 y_cent = flip(y_cent);
@@ -337,7 +351,23 @@ if max_recursions > 1
         end
     end
     
-    disp("Warning: did not reach channel end (exceeded max. no. of centerline search recursions). ")
+end
+
+
+%% end point not reached: return last attempt
+
+if ~cent_info.end_found
+    if max_recursions > 1
+        disp("Warning: did not reach channel end (exceeded max. no. of centerline search recursions). Returning last attempt. ")
+    else
+        disp("Warning: did not reach channel end. Returning centerline found so far. ")
+    end
+    if cent_info.reversed
+        % last attempt searched from end to start point: flip
+        x_cent = flip(x_cent);
+        y_cent = flip(y_cent);
+        cent_length = flip(cent_length);
+    end
 end
 
 end % of function

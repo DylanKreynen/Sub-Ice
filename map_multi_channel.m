@@ -104,7 +104,7 @@ if start_end_method == 1
     
     no_channels = c; 
     disp(append("Entered ", string(no_channels), " channels' start and end points. "))
-    channel_label = strings(no_channels);
+    channel_label = strings(no_channels, 1);
     for c = 1:no_channels
         channel_label(c) = string(input(append("Provide a label for channel ", string(c), ': '), 's'));
     end
@@ -142,6 +142,12 @@ elseif start_end_method == 2
     % channel label - feel free to adjust: 
     channel_label = append("channel-", string(1:no_channels)); 
     % (should be string)
+
+    % attributes of start points (e.g. qualitative flags added by the
+    % user), carried over to the centerline shapefile
+    % (start and end point of a channel are assumed to share attributes)
+    attr_startend = struct2table(S(~even_idx), 'AsArray', true);
+    attr_startend = removevars(attr_startend, intersect(attr_startend.Properties.VariableNames, {'Geometry', 'BoundingBox', 'X', 'Y'}));
     
     
 elseif start_end_method == 3
@@ -152,9 +158,17 @@ elseif start_end_method == 3
     scatter(P_end(:,1), P_end(:,2), 'm', 'filled')
     text(P_start(:,1) + text_offs, P_start(:,2) + text_offs, 'start', 'Color', 'm')
     text(P_end(:,1) + text_offs, P_end(:,2) + text_offs, 'end', 'Color', 'm')
+
+    no_channels = size(P_start, 1); 
+    channel_label = append("channel-", string(1:no_channels)); 
     
 else
     error('Specify a valid method to enter channel start/end points (under "user specifiable variables" in config.m). ')
+end
+
+% no start point attributes, unless read from shapefile
+if ~exist('attr_startend', 'var')
+    attr_startend = table('Size', [no_channels 0], 'VariableTypes', {});
 end
 
 
@@ -181,6 +195,7 @@ edge_idx = cell(no_channels, 1);
 edge_coord = cell(no_channels, 1); 
 edge_elev = cell(no_channels, 1); 
 fchannel = cell(no_channels, 1);
+cent_info = cell(no_channels, 1); 
 trough_elev = cell(no_channels, 1); 
 trough_depth = cell(no_channels, 1); 
 
@@ -193,7 +208,8 @@ for c = 1:no_channels
     
     % find centerline
     % attention: possibly using smoothed DEM to find centerlines! 
-    [x_cent{c}, y_cent{c}, cent_length] = find_centerline(P_start(c,:), P_end(c,:), DEM_smooth, R, ... 
+    % (cent_info: search parameters of the (last) attempt, incl. retries)
+    [x_cent{c}, y_cent{c}, cent_length, cent_info{c}] = find_centerline(P_start(c,:), P_end(c,:), DEM_smooth, R, ... 
                                                 'search_step',      search_step, ... 
                                                 'search_angle',     search_angle, ... 
                                                 'max_gradient',     max_gradient, ... 
@@ -202,9 +218,11 @@ for c = 1:no_channels
     channel_length{c} = sum(cent_length);       % in [pix]
     channel_length{c} = channel_length{c}*res;  % in [m]
 
-    if ~isnan(channel_length{c})
-        % found channel end
-        channel_status(c) = 1;
+    % did we reach the channel end point?
+    % (if not, continue with the centerline of the last attempt)
+    channel_status(c) = cent_info{c}.end_found;
+    if ~channel_status(c)
+        disp(append("Warning: end point of ", channel_label(c), " not reached. Continuing with the centerline of the last attempt (", string(round(channel_length{c}/1000, 1)), " km). "))
     end
 
     % find cross sectional profiles
@@ -284,8 +302,16 @@ if save_figs || save_shps
     if save_shps
     
         % all centerlines in a single file
+        % attributes: start point attributes (if any), whether the end
+        % point was reached, and the search parameters actually used
+        % (those of the successful attempt, incl. retries, see find_centerline())
+        info = struct2table(vertcat(cent_info{:}), 'AsArray', true);
+        info = renamevars(info, info.Properties.VariableNames, ...
+            ["step_m", "angle_deg", "max_grad", "win_cent", "reversed", "perturbed", "attempt", "end_found"]);
+        info.win_dem = repmat(window_DEM, no_channels, 1);
+        attr = [attr_startend, info];
         fn = append(shp_dir, file_prefix, 'all_centerlines'); 
-        lines_to_shp(x_cent, y_cent, R, fn, 'channel_label', fchannel); 
+        lines_to_shp(x_cent, y_cent, R, fn, 'channel_label', fchannel, 'attributes', attr); 
         
         % centerlines and outlines in one file per channel
         for c = 1:no_channels

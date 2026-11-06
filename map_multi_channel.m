@@ -6,12 +6,14 @@ clc
 %  Algorithm that returns ice shelf basal channels' centerline, outlines
 %  and cross sectional profiles; based on surface expressions in a DEM. 
 %  This script maps one or more channels given a single DEM and user
-%  identified channel start and end points. (See "map_channel_timeseries.m"
-%  for mapping a single channel over different DEMs.)
+%  identified channel start and end points, or existing channel centerlines
+%  (e.g. selected from a previous run). (See "map_channel_timeseries.m" for
+%  mapping a single channel over different DEMs.)
 % 
 %  Input: 
 %   - DEM (GeoTIFF) 
-%   - channel start and end points (through GUI or read from shapefile)
+%   - channel start and end points (through GUI or read from shapefile), or
+%     channel centerlines (shapefile)
 % 
 %  Output: 
 %   - channel centerlines and outlines (figures and georeferenced shapefiles)
@@ -58,7 +60,8 @@ DEM_smooth = smooth_dem(DEM, res, window_DEM, path_to_DEM);
 
 %% specify channel centerline start/end points
 %  have user click on channel start and end points through GUI, read start
-%  and end points from shapefile or enter img coordinates manually
+%  and end points from shapefile or enter img coordinates manually; or load
+%  existing channel centerlines from shapefile
 
 % color limits for visualisation (update as required)
 clims = [-20 80];              % [m]
@@ -161,7 +164,49 @@ elseif start_end_method == 3
 
     no_channels = size(P_start, 1); 
     channel_label = append("channel-", string(1:no_channels)); 
-    
+
+
+elseif start_end_method == 4
+    % load existing centerlines from line shapefile (no centerline search)
+    % only works if shapefile has same map projection as DEM!
+    S = shaperead(path_to_centerline_shp); 
+    no_channels = length(S); 
+
+    x_load = cell(no_channels, 1); 
+    y_load = cell(no_channels, 1); 
+    for c = 1:no_channels
+        % strip NaN part separators and convert to img coordinates
+        if sum(isnan(S(c).X(1:end-1))) > 0
+            disp(append("Warning: centerline ", string(c), " in shapefile consists of multiple parts. Parts are joined. "))
+        end
+        valid = ~isnan(S(c).X) & ~isnan(S(c).Y); 
+        [x_load{c}, y_load{c}] = worldToIntrinsic(R, S(c).X(valid)', S(c).Y(valid)'); 
+    end
+    P_start = cell2mat(cellfun(@(x, y) [x(1), y(1)], x_load, y_load, 'UniformOutput', false)); 
+    P_end = cell2mat(cellfun(@(x, y) [x(end), y(end)], x_load, y_load, 'UniformOutput', false)); 
+
+    % channel label from attribute table, if available (first attribute
+    % starting with "channel"; field names are truncated on write)
+    attr_startend = struct2table(S, 'AsArray', true);
+    attr_startend = removevars(attr_startend, intersect(attr_startend.Properties.VariableNames, {'Geometry', 'BoundingBox', 'X', 'Y'}));
+    label_field = attr_startend.Properties.VariableNames(startsWith(attr_startend.Properties.VariableNames, "channel", 'IgnoreCase', true)); 
+    if isempty(label_field)
+        channel_label = append("channel-", string(1:no_channels)); 
+    else
+        channel_label = string(attr_startend.(label_field{1}))'; 
+        attr_startend = removevars(attr_startend, label_field{1}); % (written separately)
+    end
+    % (other attributes, e.g. search parameters, are carried over to the
+    % output shapefile)
+
+    scatter(P_start(:,1), P_start(:,2), 'm', 'filled')
+    scatter(P_end(:,1), P_end(:,2), 'm', 'filled')
+    text(P_start(:,1) + text_offs, P_start(:,2) + text_offs, 'start', 'Color', 'm')
+    text(P_end(:,1) + text_offs, P_end(:,2) + text_offs, 'end', 'Color', 'm')
+
+    disp(append("Loaded ", string(no_channels), " channel centerlines from shapefile. "))
+
+
 else
     error('Specify a valid method to enter channel start/end points (under "user specifiable variables" in config.m). ')
 end
@@ -169,6 +214,21 @@ end
 % no start point attributes, unless read from shapefile
 if ~exist('attr_startend', 'var')
     attr_startend = table('Size', [no_channels 0], 'VariableTypes', {});
+end
+
+% exclude channels, if requested
+if ~isempty(excl_channel_labels)
+    keep = ~ismember(channel_label, excl_channel_labels); 
+    disp(append("Excluding ", string(sum(~keep)), " channel(s): ", strjoin(channel_label(~keep), ", "), ". "))
+    P_start = P_start(keep, :); 
+    P_end = P_end(keep, :); 
+    channel_label = channel_label(keep); 
+    attr_startend = attr_startend(keep, :); 
+    if start_end_method == 4
+        x_load = x_load(keep); 
+        y_load = y_load(keep); 
+    end
+    no_channels = sum(keep); 
 end
 
 
@@ -206,24 +266,33 @@ channel_status = zeros(no_channels, 1);
 for c = 1:no_channels
     disp(append("Start mapping channel geometry of ", channel_label(c), ". ")) 
     
-    % find centerline
-    % attention: possibly using smoothed DEM to find centerlines! 
-    % (cent_info: search parameters of the (last) attempt, incl. retries)
-    [x_cent{c}, y_cent{c}, cent_length, cent_info{c}] = find_centerline(P_start(c,:), P_end(c,:), DEM_smooth, R, ... 
-                                                'search_step',      search_step, ... 
-                                                'search_angle',     search_angle, ... 
-                                                'max_gradient',     max_gradient, ... 
-                                                'window',           window_cent, ...
-                                                'max_recursions',   max_recursions); 
+    if start_end_method == 4
+        % centerline loaded from shapefile
+        x_cent{c} = x_load{c}; 
+        y_cent{c} = y_load{c}; 
+        cent_length = sqrt(diff(x_cent{c}).^2 + diff(y_cent{c}).^2); 
+        channel_status(c) = 1; 
+
+    else
+        % find centerline
+        % attention: possibly using smoothed DEM to find centerlines! 
+        % (cent_info: search parameters of the (last) attempt, incl. retries)
+        [x_cent{c}, y_cent{c}, cent_length, cent_info{c}] = find_centerline(P_start(c,:), P_end(c,:), DEM_smooth, R, ... 
+                                                    'search_step',      search_step, ... 
+                                                    'search_angle',     search_angle, ... 
+                                                    'max_gradient',     max_gradient, ... 
+                                                    'window',           window_cent, ...
+                                                    'max_recursions',   max_recursions); 
+
+        % did we reach the channel end point?
+        % (if not, continue with the centerline of the last attempt)
+        channel_status(c) = cent_info{c}.end_found;
+        if ~channel_status(c)
+            disp(append("Warning: end point of ", channel_label(c), " not reached. Continuing with the centerline of the last attempt (", string(round(sum(cent_length)*res/1000, 1)), " km). "))
+        end
+    end
     channel_length{c} = sum(cent_length);       % in [pix]
     channel_length{c} = channel_length{c}*res;  % in [m]
-
-    % did we reach the channel end point?
-    % (if not, continue with the centerline of the last attempt)
-    channel_status(c) = cent_info{c}.end_found;
-    if ~channel_status(c)
-        disp(append("Warning: end point of ", channel_label(c), " not reached. Continuing with the centerline of the last attempt (", string(round(channel_length{c}/1000, 1)), " km). "))
-    end
 
     % find cross sectional profiles
     [profiles{c}, x_prof{c}, y_prof{c}] = find_profiles(x_cent{c}, y_cent{c}, DEM, R, ...
@@ -305,11 +374,16 @@ if save_figs || save_shps
         % attributes: start point attributes (if any), whether the end
         % point was reached, and the search parameters actually used
         % (those of the successful attempt, incl. retries, see find_centerline())
-        info = struct2table(vertcat(cent_info{:}), 'AsArray', true);
-        info = renamevars(info, info.Properties.VariableNames, ...
-            ["step_m", "angle_deg", "max_grad", "win_cent", "reversed", "perturbed", "attempt", "end_found"]);
-        info.win_dem = repmat(window_DEM, no_channels, 1);
-        attr = [attr_startend, info];
+        % (for loaded centerlines: the attributes of the input shapefile)
+        if start_end_method == 4
+            attr = attr_startend; 
+        else
+            info = struct2table(vertcat(cent_info{:}), 'AsArray', true);
+            info = renamevars(info, info.Properties.VariableNames, ...
+                ["step_m", "angle_deg", "max_grad", "win_cent", "reversed", "perturbed", "attempt", "end_found"]);
+            info.win_dem = repmat(window_DEM, no_channels, 1);
+            attr = [attr_startend, info];
+        end
         fn = append(shp_dir, file_prefix, 'all_centerlines'); 
         lines_to_shp(x_cent, y_cent, R, fn, 'channel_label', fchannel, 'attributes', attr); 
         

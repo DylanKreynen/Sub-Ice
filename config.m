@@ -43,11 +43,22 @@ start_end_method = 2;
 % 1 = click on start/end points
 % 2 = read from shapefile
 % 3 = manually enter in script
+% 4 = load existing centerlines from shapefile (skips the centerline search)
 path_to_start_end_shp = './input/venable_start_end_4.shp'; 
 % ^ only needed when start_end_method is set to "2" (read from shapefile)
 % important: only works if shapefile has same map projection as DEM! 
 shelf_filter = ''; % no filtering: shelf_filter = ''; 
 % ^ optional: filter shapefile on "Shelf" field
+path_to_centerline_shp = './output/venable/shp/default_all_centerlines.shp'; 
+% ^ only needed when start_end_method is set to "4" (load centerlines from
+% line shapefile, e.g. a centerline selected from a previous (ensemble) run;
+% lines should run from channel start to end point, i.e. downstream)
+% important: only works if shapefile has same map projection as DEM! 
+% channel labels are read from the first attribute starting with "channel"
+% (if any), other attributes are carried over to the output shapefile
+
+excl_channel_labels = []; % no exclusion: excl_channel_labels = []; 
+% ^ optional: channel labels to skip, e.g. ["channel-3", "channel-7"]
 
 % centerline search parameters
 search_step = 1500;               % distance to step away from last known centerline point to construct search profile [m]

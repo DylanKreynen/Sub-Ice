@@ -20,7 +20,7 @@
 % ice shelf DEM (should be GeoTIFF)
 path_to_DEM = './input/venable.tif'; % to a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries.m
 DEM_nodata = -9999;         % DEM no data value
-window_DEM = 0;             % window size for DEM smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
+window_DEM = 0;             % window size for DEM smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing; or set of values for ensemble mode)
                             % only works with map_multi_channel.m variations (TO DO: implement in map_channel_timeseries.m)
 
 % output behaviour: 
@@ -61,6 +61,12 @@ excl_channel_labels = []; % no exclusion: excl_channel_labels = [];
 % ^ optional: channel labels to skip, e.g. ["channel-3", "channel-7"]
 
 % centerline search parameters
+% single values: map one centerline per channel (and continue with profiles
+% and edges); sets of values for any of search_step, search_angle,
+% max_gradient, window_cent (and window_DEM above): ensemble mode, map one
+% centerline per channel for every combination of values (full-factorial
+% ensemble, e.g. search_angle = 30:10:120), then stop - select a centerline
+% per channel from the ensemble output and continue with start_end_method = 4
 search_step = 1500;               % distance to step away from last known centerline point to construct search profile [m]
 search_angle = 85;                % angle of view within to look for next centerline point [deg]
 max_gradient = 2;                 % if new centerline point's elevation exceeds max. gradient, pick next best point instead [%]

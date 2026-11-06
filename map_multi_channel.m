@@ -10,6 +10,14 @@ clc
 %  (e.g. selected from a previous run). (See "map_channel_timeseries.m" for
 %  mapping a single channel over different DEMs.)
 % 
+%  Ensemble mode: if sets of values are given for any of the centerline
+%  search parameters in config.m, centerlines are mapped for every
+%  combination of values (full-factorial ensemble). Only centerlines that
+%  connect start and end point are kept, and written to a single shapefile
+%  incl. their search parameters. The script then stops: select a
+%  centerline per channel (e.g. by visual inspection) and run again with
+%  start_end_method = 4 to extract profiles and edges.
+% 
 %  Input: 
 %   - DEM (GeoTIFF) 
 %   - channel start and end points (through GUI or read from shapefile), or
@@ -17,6 +25,7 @@ clc
 % 
 %  Output: 
 %   - channel centerlines and outlines (figures and georeferenced shapefiles)
+%     (ensemble mode: centerline ensemble only)
 %   - cross sectional elevation/depth profiles (figures)
 %   - channel depth and width along centerlines (figures)
 % 
@@ -37,6 +46,12 @@ clc
 
 run 'config.m'
 
+% ensemble mode if sets of values are given for any of the search parameters
+ensemble_mode = any(cellfun(@numel, {window_DEM, search_step, search_angle, max_gradient, window_cent}) > 1); 
+if ensemble_mode && start_end_method == 4
+    error("Ensemble mode (sets of centerline search parameters in config.m) requires a centerline search: set start_end_method to 1, 2 or 3. ")
+end
+
 
 %% read DEM from GeoTIFF
 %  and smooth if required
@@ -54,8 +69,11 @@ DEM(DEM==DEM_nodata) = NaN;
 disp("Loaded DEM. ")
 
 % smooth DEM for centerline mapping, if requested
-% (smoothed DEM is cached to disk and loaded from there in subsequent runs)
-DEM_smooth = smooth_dem(DEM, res, window_DEM, path_to_DEM);
+% (smoothed DEM is cached to disk and loaded from there in subsequent runs;
+% in ensemble mode: for every value of window_DEM, see below)
+if ~ensemble_mode && start_end_method ~= 4
+    DEM_smooth = smooth_dem(DEM, res, window_DEM, path_to_DEM);
+end
 
 
 %% specify channel centerline start/end points
@@ -229,6 +247,109 @@ if ~isempty(excl_channel_labels)
         y_load = y_load(keep); 
     end
     no_channels = sum(keep); 
+end
+
+
+%% ensemble mode: map centerline ensemble
+%  one centerline per channel for every combination of search parameter
+%  values; keep those that connect start and end point; write to file; stop
+
+if ensemble_mode
+
+    % all combinations of search parameter values (full-factorial ensemble)
+    [g_step, g_angle, g_grad, g_wcent] = ndgrid(search_step, search_angle, max_gradient, window_cent); 
+    no_comb = numel(g_step); 
+    no_members = no_comb*numel(window_DEM); 
+    disp(append("Ensemble mode: mapping ", string(no_members), " centerline realizations for each of ", string(no_channels), " channels. "))
+    if ~save_shps
+        disp("Warning: save_shps = 0, the centerline ensemble will not be written to file. ")
+    end
+
+    % store realizations that connect start and end point
+    ens_x = {}; 
+    ens_y = {}; 
+    ens_channel = []; 
+    ens_info = struct([]); 
+    ens_set = []; 
+    no_success = zeros(no_channels, 1); 
+
+    member = 0; 
+    for w = 1:numel(window_DEM)
+        DEM_smooth = smooth_dem(DEM, res, window_DEM(w), path_to_DEM);
+        for k = 1:no_comb
+            member = member + 1; 
+            disp(append("Ensemble member ", string(member), "/", string(no_members), ...
+                ": window_DEM = ", string(window_DEM(w)), ", search_step = ", string(g_step(k)), ", search_angle = ", string(g_angle(k)), ...
+                ", max_gradient = ", string(g_grad(k)), ", window_cent = ", string(g_wcent(k)), ". "))
+            for c = 1:no_channels
+                [x_c, y_c, ~, info_c] = find_centerline(P_start(c,:), P_end(c,:), DEM_smooth, R, ... 
+                                                    'search_step',      g_step(k), ... 
+                                                    'search_angle',     g_angle(k), ... 
+                                                    'max_gradient',     g_grad(k), ... 
+                                                    'window',           g_wcent(k), ...
+                                                    'max_recursions',   max_recursions); 
+                if info_c.end_found
+                    ens_x{end+1, 1} = x_c; 
+                    ens_y{end+1, 1} = y_c; 
+                    ens_channel(end+1, 1) = c; 
+                    info_c.win_dem = window_DEM(w); 
+                    ens_info = [ens_info; info_c]; 
+                    % configured (not perturbed) parameter values and member no.
+                    ens_set(end+1, :) = [member, window_DEM(w), g_step(k), g_angle(k), g_grad(k), g_wcent(k)]; 
+                    no_success(c) = no_success(c) + 1; 
+                end
+            end
+        end
+    end
+
+    % success rate per channel
+    disp("Ensemble realizations connecting start and end point, per channel: ")
+    disp(table(channel_label(:), no_success, round(100*no_success/no_members, 1), ...
+        'VariableNames', {'channel', 'no_realizations', 'success_rate_pct'}))
+
+    % overview figure
+    f = figure(1); 
+    hold off
+    imagesc(DEM, clims)
+    axis image
+    colormap gray
+    title(append("centerline ensemble (", string(numel(ens_x)), " realizations)"))
+    xlabel('x coord [pix]')
+    ylabel('y coord [pix]')
+    hold on
+    for e = 1:numel(ens_x)
+        plot(ens_x{e}, ens_y{e}, 'r')
+    end
+    scatter(P_start(:,1), P_start(:,2), 'm', 'filled')
+    scatter(P_end(:,1), P_end(:,2), 'm', 'filled')
+    text(P_start(:,1) + text_offs, P_start(:,2) + text_offs, channel_label, 'Color', 'm')
+
+    if save_figs
+        fn = append(fig_dir, file_prefix, 'centerline_ensemble'); 
+        print(fn, figs_filetype, figs_resolution)
+    end
+
+    % write ensemble to shapefile: all realizations of all channels in one
+    % file, ordered by channel; attributes: start point attributes (if any),
+    % search parameters actually used (incl. retries, see find_centerline()),
+    % ensemble member no. and the configured parameter values of the member
+    if save_shps && ~isempty(ens_x)
+        [~, order] = sort(ens_channel); 
+        info = struct2table(ens_info(order), 'AsArray', true);
+        info = renamevars(info, ["search_step", "search_angle", "max_gradient", "window"], ...
+            ["step_m", "angle_deg", "max_grad", "win_cent"]);
+        set_info = array2table(ens_set(order, :), 'VariableNames', ...
+            ["member", "set_wdem", "set_step", "set_angle", "set_grad", "set_wcent"]); 
+        attr = [attr_startend(ens_channel(order), :), info, set_info];
+        fn = append(shp_dir, file_prefix, 'centerline_ensemble'); 
+        lines_to_shp(ens_x(order), ens_y(order), R, fn, 'channel_label', num2cell(channel_label(ens_channel(order))), 'attributes', attr); 
+        disp(append("Wrote centerline ensemble to ", fn, ".shp. "))
+    elseif save_shps
+        disp("No realization connected start and end point, no shapefile written. ")
+    end
+
+    disp("Done! Select a centerline per channel from the ensemble and run again with start_end_method = 4 to extract profiles and channel edges. ")
+    return
 end
 
 

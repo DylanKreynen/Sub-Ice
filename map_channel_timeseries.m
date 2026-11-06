@@ -55,6 +55,12 @@ disp(append("Running Sub-Ice (time series) with configuration file ", config_fn,
 % file are relative to the Sub-Ice folder, wherever the file is stored)
 eval(fileread(config_fn))
 
+% check configuration: default values for missing settings, clear messages
+% for mistakes, create output directories (see functions/check_config.m)
+addpath("./functions")
+subice_mode = "timeseries";
+check_config
+
 % no ensemble mode for time series
 if any(cellfun(@numel, {window_DEM, search_step, search_angle, max_gradient, window_cent}) > 1)
     error("Ensemble mode (sets of centerline search parameters in config.m) is not available for time series: give single values. ")
@@ -152,20 +158,11 @@ elseif start_end_method == 2
     end
 
 elseif start_end_method == 3
-    % enter start/end points manually below, one row per DEM (in
-    % chronological order), in image coordinates of the respective DEM
-    P_start = [353, 128];    % x, y in image coord [pix]
-    P_end = [260, 84];       % x, y in image coord [pix]
-    if size(P_start, 1) ~= no_DEMs || size(P_end, 1) ~= no_DEMs
-        error('Number of manually entered start/end point pairs does not match number of DEMs (see start_end_method = 3 in map_channel_timeseries.m). ')
-    end
-    P_start_w = NaN(no_DEMs, 2);
-    P_end_w = NaN(no_DEMs, 2);
-    for t = 1:no_DEMs
-        R_t = georasterinfo(fullfile(path_to_DEM, DEM_files{t})).RasterReference;
-        [P_start_w(t,1), P_start_w(t,2)] = intrinsicToWorld(R_t, P_start(t,1), P_start(t,2));
-        [P_end_w(t,1), P_end_w(t,2)] = intrinsicToWorld(R_t, P_end(t,1), P_end(t,2));
-    end
+    % start/end points given in the configuration file (start_end_points,
+    % map coordinates: [x_start y_start x_end y_end], one row per DEM, in
+    % chronological order)
+    P_start_w = start_end_points(:, 1:2);
+    P_end_w = start_end_points(:, 3:4);
 
 elseif start_end_method == 4
     % load existing centerlines from line shapefile, one per DEM, in

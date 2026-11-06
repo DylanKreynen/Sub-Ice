@@ -57,6 +57,12 @@ disp(append("Running Sub-Ice with configuration file ", config_fn, ". "))
 % file are relative to the Sub-Ice folder, wherever the file is stored)
 eval(fileread(config_fn))
 
+% check configuration: default values for missing settings, clear messages
+% for mistakes, create output directories (see functions/check_config.m)
+addpath("./functions")
+subice_mode = "single"; 
+check_config
+
 % ensemble mode if sets of values are given for any of the search parameters
 ensemble_mode = any(cellfun(@numel, {window_DEM, search_step, search_angle, max_gradient, window_cent}) > 1); 
 if ensemble_mode && start_end_method == 4
@@ -179,9 +185,10 @@ elseif start_end_method == 2
     
     
 elseif start_end_method == 3
-    % enter start/end points manually below
-    P_start = [353, 128];    % x, y in image coord [pix]
-    P_end = [260, 84];       % x, y in image coord [pix]
+    % start/end points given in the configuration file (start_end_points,
+    % map coordinates: [x_start y_start x_end y_end], one row per channel)
+    [P_start(:,1), P_start(:,2)] = worldToIntrinsic(R, start_end_points(:,1), start_end_points(:,2)); 
+    [P_end(:,1), P_end(:,2)] = worldToIntrinsic(R, start_end_points(:,3), start_end_points(:,4)); 
     scatter(P_start(:,1), P_start(:,2), 'm', 'filled')
     scatter(P_end(:,1), P_end(:,2), 'm', 'filled')
     text(P_start(:,1) + text_offs, P_start(:,2) + text_offs, 'start', 'Color', 'm')

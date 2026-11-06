@@ -48,34 +48,12 @@ end
 res = R.CellExtentInWorldX;     % resolution of DEM [m]
 
 % replace no data with NaN
-DEM(DEM==DEM_nodata) = NaN; 
+DEM(DEM==DEM_nodata) = NaN;
+disp("Loaded DEM. ")
 
-% check if smoothed version of DEM exists
-% if it exists: load
-% if not: smooth DEM (and save)
-if window_DEM ~= 0
-    % smoothing requested by user
-    fn_smooth = append(path_to_DEM(1:end-4), '_smooth_', string(window_DEM)', '.mat'); 
-    window = ceil(window_DEM/res);  % from [m] to [pix]
-    try 
-        DEM_smooth = load(fn_smooth).DEM_smooth; 
-        disp(append("Loaded smoothed version of DEM from disk: ", fn_smooth, " Window size: ", string(window_DEM), " [m] (ca. ", string(window), " [pix]). "))
-    catch
-        disp(append("Could not find smoothed version of DEM. Smoothing now. Window size: ", string(window_DEM), " [m] (ca. ", string(window), " [pix]). "))
-        DEM_smooth = smoothdata2(DEM, 'movmean', window, 'omitnan'); 
-        save(fn_smooth, 'DEM_smooth'); 
-    end
-   
-    % test: check if DEM dimensions agree
-    if size(DEM) ~= size(DEM_smooth)
-        error("Dimensions of DEM and smoothed version do not agree. ")
-    end
-
-else
-    % no smoothing requested
-    DEM_smooth = DEM; 
-    disp("Loaded DEM, no smoothing requested. ")
-end
+% smooth DEM for centerline mapping, if requested
+% (smoothed DEM is cached to disk and loaded from there in subsequent runs)
+DEM_smooth = smooth_dem(DEM, res, window_DEM, path_to_DEM);
 
 
 %% specify channel centerline start/end points

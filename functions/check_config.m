@@ -129,15 +129,15 @@ if start_end_method == 4 && ~isfile(path_to_centerline_shp)
     error(append("Centerline shapefile not found: '", path_to_centerline_shp, "' (check path_to_centerline_shp in the configuration file). "))
 end
 
-% edge detection method (not case sensitive)
+% edge detection method (not case sensitive, spaces ignored)
 cfg_edge_methods = ["SlopeThreshold", "KneePoint", "NearPeaks"];
-cfg_k = find(strcmpi(string(edge_method), cfg_edge_methods));
+cfg_k = find(strcmpi(regexprep(string(edge_method), '\s', ''), cfg_edge_methods));
 if isempty(cfg_k)
     error(append("edge_method should be ", strjoin(cfg_edge_methods, ", "), ", not '", string(edge_method), "'. "))
 end
 edge_method = cfg_edge_methods(cfg_k);
 cfg_knee_methods = ["LinearRegression", "Kneedle"];
-cfg_k = find(strcmpi(string(knee_method), cfg_knee_methods));
+cfg_k = find(strcmpi(regexprep(string(knee_method), '\s', ''), cfg_knee_methods));
 if isempty(cfg_k)
     error(append("knee_method should be ", strjoin(cfg_knee_methods, " or "), ", not '", string(knee_method), "'. "))
 end

@@ -8,8 +8,8 @@ width, depth and edge elevation are saved as tables, figures and georeferenced s
 
 For a detailed description of the method, please refer to our preprint on arXiv.org:
 
-> Kreynen D, Alley KE, Santis M, Hock R and Jackson PH (in prep.) Sub-Ice: semi-automated mapping
-> of basal channels from ice shelf surface elevation data.
+> Kreynen D, Alley KE, Santis M, Hock R and Jackson PH (2026) Sub-Ice: semi-automated mapping
+> of basal channels from ice shelf surface elevation data. arXiv preprint, doi: [coming soon]
 
 All settings are explained in the comments of the configuration file (*config.m*).
 
@@ -21,8 +21,7 @@ All settings are explained in the comments of the configuration file (*config.m*
 
 ### Getting started:
 
-1. Make sure you have MATLAB with the Mapping Toolbox and the Signal Processing Toolbox (Sub-Ice was
-   tested in MATLAB R2026a).
+1. Install MATLAB with the Mapping and Signal Processing Toolboxes (tested: R2026a).
 2. Clone this GitHub repository to create a local copy of the code on your computer (or download and unzip).
 3. Open *config.m* and update the settings as required. To write output to disk, set `save_figs`,
    `save_shps` and/or `save_tables` to 1.
@@ -54,16 +53,13 @@ and is licensed separately under [CC BY 4.0](https://creativecommons.org/license
 (MATLAB Central File Exchange, BSD license, see *LICENSE*).
 
 
-\
-Sub-Ice version as of 2026-11-06 (tested using MATLAB R2026a)
-
 &copy; [Dylan Kreynen](https://www.mn.uio.no/geo/english/people/aca/geohyd/kreynen/)  
 University of Oslo  
 2024-2026
+
+We thank Adam Isaak (University of Manitoba) for implementing the NearPeaks-Kneedle edge detection methods.
 
 originally a project at the International Summer School in Glaciology\
 project team members: Marcelo Santis & Dylan Kreynen\
 advisor: Karen Alley (University of Manitoba)\
 McCarthy (AK), June 2024
-
-NearPeaks-Kneedle edge detection method: Adam Isaak (University of Manitoba)

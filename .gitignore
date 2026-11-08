@@ -3,6 +3,7 @@
 
 # Un-ignore tracked files
 !.gitignore
+!CITATION.cff
 !LICENSE
 !README.md
 !config.m

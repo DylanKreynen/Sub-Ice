@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use Sub-Ice, please cite the paper below (preferred citation) and the software version you used."
+type: software
+title: "Sub-Ice: Surface-based Ice Shelf Channel Extraction"
+version: 1.0.0
+license: MIT
+repository-code: "https://github.com/DylanKreynen/Sub-Ice"
+abstract: >-
+  Sub-Ice is a MATLAB algorithm for mapping ice shelf basal channels based on
+  their surface expression in a digital elevation model (DEM). Given a DEM and
+  start and end points for each channel of interest, Sub-Ice maps the channel
+  centerline, extracts cross-sectional elevation profiles and delineates the
+  channel edges. Channel width, depth and edge elevation are saved as tables,
+  figures and georeferenced shapefiles.
+keywords:
+  - glaciology
+  - ice shelves
+  - basal channels
+  - digital elevation model
+  - MATLAB
+authors:
+  - family-names: Kreynen
+    given-names: Dylan
+    affiliation: "Department of Geosciences, University of Oslo, Oslo, Norway"
+preferred-citation:
+  type: article
+  status: preprint
+  title: "Sub-Ice: semi-automated mapping of basal channels from ice shelf surface elevation data"
+  year: 2026
+  journal: arXiv
+  authors:
+    - family-names: Kreynen
+      given-names: Dylan
+      affiliation: "Department of Geosciences, University of Oslo, Oslo, Norway"
+    - family-names: Alley
+      given-names: Karen E.
+      affiliation: "Centre for Earth Observation Science, University of Manitoba, Winnipeg, MB, Canada"
+    - family-names: Santis
+      given-names: Marcelo
+      affiliation: "Department of Geology, University of Chile, Santiago, Chile; Department of Geography and Earth Sciences, Aberystwyth University, Aberystwyth, UK"
+    - family-names: Hock
+      given-names: Regine
+      affiliation: "Department of Geosciences, University of Oslo, Oslo, Norway; Geophysical Institute, University of Alaska Fairbanks, Fairbanks, AK, USA"
+    - family-names: Jackson
+      given-names: Phoebe H.
+      affiliation: "Scott Polar Research Institute, University of Cambridge, Cambridge, UK"

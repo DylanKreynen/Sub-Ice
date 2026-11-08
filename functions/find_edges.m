@@ -231,6 +231,13 @@ for i = 1:no_profs
         k_min = min_off(s);
         is_peak = false;
 
+        % no elevation data between min. and max. width (e.g. beyond the DEM
+        % or the ice front): no edge on this side, rather than a fallback edge
+        % at min./max. width
+        if all(isnan(hprof(k_min+1:end)))
+            continue
+        end
+
         if edge_method == "SlopeThreshold"
             % slope in outward direction
             hslope = slope(hidx);
@@ -275,8 +282,11 @@ end
 
 % smooth edges using median filter (if window ~= 0) 
 if m_window ~= 0
-    ledge_idx_filt = ceil(medfilt1(ledge_idx, m_window, [], 1, 'truncate')); 
-    redge_idx_filt = ceil(medfilt1(redge_idx, m_window, [], 1, 'truncate'));
+    % (profiles without an edge stay without one)
+    ledge_idx_filt = ceil(medfilt1(ledge_idx, m_window, [], 1, 'omitnan', 'truncate'));
+    redge_idx_filt = ceil(medfilt1(redge_idx, m_window, [], 1, 'omitnan', 'truncate'));
+    ledge_idx_filt(isnan(ledge_idx)) = NaN;
+    redge_idx_filt(isnan(redge_idx)) = NaN;
 
 
     if keep_pks == 1         % preserve the peaks position from smoothing by resetting them back
@@ -332,17 +342,17 @@ end
 
 % fetch edge elevations
 for i = 1:no_profs
-    prof = profiles(:,i); 
-    lelev(i) = prof(ledge_idx_filt(i));
-    relev(i) = prof(redge_idx_filt(i)); 
+    prof = profiles(:,i);
+    if ~isnan(ledge_idx_filt(i)), lelev(i) = prof(ledge_idx_filt(i)); end
+    if ~isnan(redge_idx_filt(i)), relev(i) = prof(redge_idx_filt(i)); end
 end
 
 % z-score for edge profile index
-mean_idx = mean(ledge_idx_filt); 
-std_idx = std(ledge_idx_filt); 
+mean_idx = mean(ledge_idx_filt, 'omitnan');
+std_idx = std(ledge_idx_filt, 'omitnan');
 z_lidx = (ledge_idx_filt-mean_idx)./std_idx; % left edge
-mean_idx = mean(redge_idx_filt); 
-std_idx = std(redge_idx_filt); 
+mean_idx = mean(redge_idx_filt, 'omitnan');
+std_idx = std(redge_idx_filt, 'omitnan');
 z_ridx = (redge_idx_filt-mean_idx)./std_idx; % right edge
 
 % z-score for edge elevation

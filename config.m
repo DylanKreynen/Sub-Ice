@@ -29,7 +29,7 @@
 % ice shelf DEM (GeoTIFF, projected coordinates in meters)
 path_to_DEM = './input/venable.tif';    % a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries.m
                                         % (time series: DEM filenames should end in the acquisition date, yyyymmdd, e.g. venable_20200115.tif)
-DEM_nodata = -9999;                     % DEM no data value (read from the GeoTIFF where given; this value is used as well, as fallback)
+DEM_nodata = -9999;                     % DEM no data value (read from the GeoTIFF where given; this value is used as fallback)
 
 % channel start and end points
 start_end_method = 2;
@@ -59,14 +59,14 @@ file_prefix = 'default_';               % (optional)
 save_figs = 0;                          % save figures Y/N
 save_shps = 0;                          % save centerlines, channel edges and profiles as shapefiles Y/N
 save_tables = 0;                        % save profiles and channel metrics as tables (.csv) Y/N
-ext_figs = 0;                           % extended figures: cross-sectional profiles and metrics along each channel Y/N
+ext_figs = 1;                           % extended figures: cross-sectional profiles and metrics along each channel Y/N
                                         % (shown when not saved, saved without opening windows when save_figs = 1)
 
 
 %% 2. CENTERLINE SEARCH
-%  (tune for your DEM and channels: the search depends on DEM resolution,
+%  tune for your DEM and channels: the search depends on DEM resolution,
 %  channel size and surface character; if centerlines do not follow the
-%  channel or do not reach the end point, try other values, or ensemble mode)
+%  channel or do not reach the end point, try other values, or ensemble mode
 
 % single values: map one centerline per channel (and continue with profiles
 % and edges); sets of values for any of search_step, search_angle,
@@ -75,29 +75,29 @@ ext_figs = 0;                           % extended figures: cross-sectional prof
 % ensemble, e.g. search_angle = 30:10:120), then stop - select a centerline
 % per channel from the ensemble output and continue with start_end_method = 4
 window_DEM = 0;                         % window size for DEM smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
-search_step = 1500;                     % distance to step away from last known centerline point to construct search profile [m]
+search_step = 1000;                     % distance to step away from last known centerline point to construct search profile [m]
 search_angle = 85;                      % angle of view within to look for next centerline point [deg]
 max_gradient = 2;                       % if new centerline point's elevation exceeds max. gradient, pick next best point instead [%]
 window_cent = 20;                       % window size for search profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing)
-max_recursions = 1;                     % max. no. of centerline search attempts in case channel end point is not found [-] (1 = no retries, 2 = retry from end point only,
+max_recursions = 10;                    % max. no. of centerline search attempts in case channel end point is not found [-] (1 = no retries, 2 = retry from end point only,
                                         % > 2 = then keep retrying with randomly perturbed search parameters, see find_centerline())
 % length of search segment = (search_angle/360)*2*pi*search_step
 
 
 %% 3. PROFILES AND CHANNEL EDGES
-%  (defaults as used in the Sub-Ice publication; adjust prof_length,
-%  min_width and max_width to the size of your channels if needed)
+%  defaults as used in the Sub-Ice publication; adjust prof_length,
+%  min_width and max_width to the size of your channels if needed
 
 % channel cross sectional profile parameters
 prof_length   = 8000;                   % length of cross sectional profiles [m]
-prof_interval = 0;                      % spacing between profiles along centerline [m] (0 = one profile per centerline search segment)
+prof_interval = 250;                    % spacing between profiles along centerline [m] (0 = one profile per centerline search segment)
 
 % channel edge parameters
 edge_method = "KneePoint";              % method to use to identify channel edges ("SlopeThreshold", "KneePoint" or "NearPeaks")
 knee_method = "Kneedle";                % kneepoint algorithm to use ("LinearRegression" or "Kneedle", used with edge methods "KneePoint" and "NearPeaks")
 min_width = 1000;                       % minimum channel width [m] (set to 0 for no minimum width; or [left right] min. distance from centerline per side)
 max_width = 8000;                       % maximum channel width [m] (set to 0 for maximum width = prof_length; or [left right] max. distance from centerline per side)
-sg_window = 500;                        % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing, Savitzky-Golay filter)
+sg_window = 1000;                       % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing, Savitzky-Golay filter)
 m_window = 0;                           % window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing, median filter)
 slope_thr = 0.00;                       % slope threshold for identifying edge [deg] (only used when edge_method = "SlopeThreshold")
 peak_prom = 0.25;                       % MinPeakProm for findpeaks() [m], minimum prominence for channel edge (only used when edge_method = "NearPeaks")
@@ -105,7 +105,7 @@ keep_pks = 0;                           % prevent peaks from being adjusted by a
 
 % outlier filtering of edges (based on z-score)
 % note: use either edge smoothing (m_window) or outlier filtering, not both
-z_thr_elev = [0 0];                     % z-score outlier threshold, elevation of edge (set to 0 to skip outlier identification)
+z_thr_elev = [1.75 1.75];               % z-score outlier threshold, elevation of edge (set to 0 to skip outlier identification)
                                         % optional: [left_thr right_thr] to use different thresholds for the left and right edge
 z_thr_idx = [1.75 1.75];                % z-score outlier threshold, profile index of edge (set to 0 to skip outlier identification)
                                         % optional: [left_thr right_thr] to use different thresholds for the left and right edge
@@ -117,7 +117,7 @@ trough_subst_window = 3;                % window for outlier substitution (movin
 
 
 %% 4. OTHER SETTINGS
-%  (rarely changed)
+%  rarely changed
 
 % output details
 fig_subdir = 'fig/';

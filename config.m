@@ -121,13 +121,21 @@ trough_subst_window = 3;                % window for outlier substitution (movin
 % output details
 fig_subdir = 'fig/';
 shp_subdir = 'shp/';
-tab_subdir = 'tab/';
-fig_format = 'png';                     % figure file format (e.g. 'png', 'pdf', 'svg')
+tab_subdir = 'tab/';fig_format = 'png';                     % figure file format (e.g. 'png', 'pdf', 'svg')
 fig_dpi = 500;                          % figure resolution [dpi]
 
 % optional channel selection
 shelf_filter = '';                      % filter start/end point shapefile on "Shelf" attribute (no filtering: '')
 excl_channel_labels = [];               % channel labels to skip, e.g. ["channel-3", "channel-7"] (no exclusion: [])
+
+% extended figures (only relevant when ext_figs = 1)
+plot_across_absh = 1;                   % plot cross-sectional profiles (absolute heights) Y/N
+plot_across_depth = 1;                  % plot cross-sectional profiles (depth relative to left edge) Y/N
+plot_along_per_channel = 1;             % plot along-channel metrics per channel Y/N
+one_fig_per_type = 0;                   % combine per-channel profile figures into one figure with subplots Y/N
+                                        % (applies to cross-sectional profile figures only)
+create_channel_atlas = 0;               % create a channel atlas: one page per channel (map, profiles, elevation, width and depth
+                                        % along the channel), saved to fig_subdir/atlas/ (independent of ext_figs and save_figs) Y/N
 
 % map figures
 map_hillshade = 1;                      % add a hillshade to the DEM on map figures Y/N

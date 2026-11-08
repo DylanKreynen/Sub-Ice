@@ -26,6 +26,7 @@
 !functions/panel_title.m
 !functions/plot_along_all_figure.m
 !functions/plot_along_channel_figure.m
+!functions/plot_channel_atlas_page.m
 !functions/profile_query_pts.m
 !functions/read_dem.m
 !functions/shade_channel.m

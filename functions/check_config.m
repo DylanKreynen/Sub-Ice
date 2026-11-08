@@ -29,6 +29,11 @@ cfg_defaults = {
     'fig_format',           'png'
     'fig_dpi',              500
     'ext_figs',             0
+    'plot_across_absh',     1
+    'plot_across_depth',    1
+    'plot_along_per_channel', 1
+    'one_fig_per_type',     0
+    'create_channel_atlas', 0
     'save_shps',            0
     'save_tables',          0
     % channel start and end points
@@ -167,6 +172,10 @@ figs_resolution = append('-r', num2str(fig_dpi));
 if save_figs
     fig_dir = append(results_dir, proj_subdir, fig_subdir);
     if ~exist(fig_dir, 'dir'), mkdir(fig_dir), end
+end
+if create_channel_atlas
+    atlas_dir = append(results_dir, proj_subdir, fig_subdir, 'atlas/');
+    if ~exist(atlas_dir, 'dir'), mkdir(atlas_dir), end
 end
 if save_shps
     shp_dir = append(results_dir, proj_subdir, shp_subdir);

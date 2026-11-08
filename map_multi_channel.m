@@ -591,72 +591,138 @@ end
 if ext_figs
 disp("Creating and possibly saving extended figures. Sit tight. ")
     T_along = cell(no_channels, 1);     % channel metrics per profile, per channel
-    
+
+    % when one_fig_per_type = 1 and there is more than one channel: pre-create
+    % a tiled figure for each profile figure type so all channels share one window
+    use_combined = one_fig_per_type && no_channels > 1;
+    if use_combined
+        if plot_across_absh
+            f_absh_all = new_figure([18, 8*no_channels], save_figs);
+            tl_absh = tiledlayout(f_absh_all, no_channels, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+        end
+        if plot_across_depth
+            f_depth_all = new_figure([18, 8*no_channels], save_figs);
+            tl_depth = tiledlayout(f_depth_all, no_channels, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+        end
+    end
+
     for c = 1:no_channels
-        
+
         % cross sectional profiles
-        no_profiles = size(profiles{c}, 2); 
-        
+        no_profiles = size(profiles{c}, 2);
+
         % distance of profile samples from profile center [m] (positive = left)
-        prof_dist_vector = ((1:size(profiles{c}, 1)) - (size(profiles{c}, 1)+1)/2)*res; 
+        prof_dist_vector = ((1:size(profiles{c}, 1)) - (size(profiles{c}, 1)+1)/2)*res;
 
         % full cross sectional profiles, absolute elevation
         % (extended figures: not shown when saved to file, else docked; see new_figure())
-        f_ext = new_figure([18 10], save_figs); 
-        plot_profile_figure(axes(f_ext), prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
-            'title', channel_label(c), ...
-            'subtitle', append("Cross-sectional profiles (", string(no_profiles), "), looking upstream"), ...
-            'min_width', min_width, 'max_width', max_width)
+        if plot_across_absh
+            if use_combined
+                ax = nexttile(tl_absh);
+            else
+                f_ext = new_figure([18 10], save_figs);
+                ax = axes(f_ext);
+            end
+            plot_profile_figure(ax, prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
+                'title', channel_label(c), ...
+                'subtitle', append("Cross-sectional profiles (", string(no_profiles), "), looking upstream"), ...
+                'min_width', min_width, 'max_width', max_width)
 
-        if save_figs
-            fn = append(fig_dir, file_prefix, channel_label(c), '_full_profiles_elev');
-            print(f_ext, fn, figs_filetype, figs_resolution)
-            close(f_ext)
+            if save_figs && ~use_combined
+                fn = append(fig_dir, file_prefix, channel_label(c), '_full_profiles_elev');
+                print(f_ext, fn, figs_filetype, figs_resolution)
+                close(f_ext)
+            end
         end
 
         % cross sectional profiles between the channel edges, relative to
         % the left channel edge
-        f_ext = new_figure([18 10], save_figs); 
-        plot_profile_figure(axes(f_ext), prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
-            'relative', true, 'title', channel_label(c), ...
-            'subtitle', append("Cross-sectional profiles between the channel edges, looking upstream; mean depth below left edge: ", ...
-                string(round(mean(edge_elev{c}(:,1) - trough_elev{c}, 'omitnan'), 1)), " m"), ...
-            'min_width', min_width, 'max_width', max_width)
+        if plot_across_depth
+            if use_combined
+                ax = nexttile(tl_depth);
+            else
+                f_ext = new_figure([18 10], save_figs);
+                ax = axes(f_ext);
+            end
+            plot_profile_figure(ax, prof_dist_vector, profiles{c}, edge_idx{c}, edge_elev{c}, ...
+                'relative', true, 'title', channel_label(c), ...
+                'subtitle', append("Cross-sectional profiles between the channel edges, looking upstream; mean depth below left edge: ", ...
+                    string(round(mean(edge_elev{c}(:,1) - trough_elev{c}, 'omitnan'), 1)), " m"), ...
+                'min_width', min_width, 'max_width', max_width)
 
-        if save_figs
-            fn = append(fig_dir, file_prefix, channel_label(c), '_lim_profiles_depth'); 
-            print(f_ext, fn, figs_filetype, figs_resolution)
-            close(f_ext)
+            if save_figs && ~use_combined
+                fn = append(fig_dir, file_prefix, channel_label(c), '_lim_profiles_depth');
+                print(f_ext, fn, figs_filetype, figs_resolution)
+                close(f_ext)
+            end
         end
-        
-        
+
         % channel geometry along the channel (one figure per channel)
         % (metrics per profile, see channel_metrics())
         T_along{c} = channel_metrics(x_cent{c}, y_cent{c}, x_prof{c}, y_prof{c}, ...
             edge_idx{c}, edge_coord{c}, edge_elev{c}, valid_edges{c}, ...
-            trough_elev{c}, valid_trough{c}, R, prof_interval); 
-        f_along = new_figure([18 13], save_figs); 
-        plot_along_channel_figure(f_along, T_along{c}, channel_label(c))
+            trough_elev{c}, valid_trough{c}, R, prof_interval);
 
-        if save_figs
-            fn = append(fig_dir, file_prefix, channel_label(c), '_along_channel');
-            print(f_along, fn, figs_filetype, figs_resolution)
-            close(f_along)
+        if plot_along_per_channel
+            f_along = new_figure([18 13], save_figs);
+            plot_along_channel_figure(f_along, T_along{c}, channel_label(c))
+
+            if save_figs
+                fn = append(fig_dir, file_prefix, channel_label(c), '_along_channel');
+                print(f_along, fn, figs_filetype, figs_resolution)
+                close(f_along)
+            end
         end
     end
-    
+
+    % save combined profile figures (produced outside the channel loop)
+    if use_combined
+        if plot_across_absh && save_figs
+            fn = append(fig_dir, file_prefix, 'all_channels_full_profiles_elev');
+            print(f_absh_all, fn, figs_filetype, figs_resolution)
+            close(f_absh_all)
+        end
+        if plot_across_depth && save_figs
+            fn = append(fig_dir, file_prefix, 'all_channels_lim_profiles_depth');
+            print(f_depth_all, fn, figs_filetype, figs_resolution)
+            close(f_depth_all)
+        end
+    end
+
     % all channels together: mean profile elevation, depth and width along
     % the channel (one color per channel)
-    f_all = new_figure([18 16], save_figs); 
+    f_all = new_figure([18 16], save_figs);
     plot_along_all_figure(f_all, T_along, cellfun(@(P) mean(P, 1, 'omitnan')', profiles, 'UniformOutput', false), ...
         channel_label, 'title', "All channels", 'subtitle', "Mean profile elevation, depth and width along the channel")
-    
+
     if save_figs
-        fn = append(fig_dir, file_prefix, 'all_channels_along_channel'); 
+        fn = append(fig_dir, file_prefix, 'all_channels_along_channel');
         print(f_all, fn, figs_filetype, figs_resolution)
         close(f_all)
     end
-    
+
+end
+
+
+%% channel atlas
+%  one page per channel (map, profiles, elevation, width and depth along
+%  the channel), always written to fig_dir/atlas/ without opening windows
+
+if create_channel_atlas
+    disp(append("Creating channel atlas in ", atlas_dir, ". "))
+    for c = 1:no_channels
+        T_atlas = channel_metrics(x_cent{c}, y_cent{c}, x_prof{c}, y_prof{c}, ...
+            edge_idx{c}, edge_coord{c}, edge_elev{c}, valid_edges{c}, ...
+            trough_elev{c}, valid_trough{c}, R, prof_interval);
+        f_atl = new_figure([24 17], true);
+        plot_channel_atlas_page(f_atl, DEM, R, x_cent{c}, y_cent{c}, edge_coord{c}, x_prof{c}, y_prof{c}, ...
+            profiles{c}, edge_idx{c}, edge_elev{c}, T_atlas, channel_label(c), ...
+            'subtitle', append("Edge detection: ", edge_method_txt), ...
+            'clims', map_clims, 'hillshade', map_hillshade, 'transects', plot_prof_transects == 1, ...
+            'bridge_gaps', plot_edge_gaps == 1, 'min_width', min_width, 'max_width', max_width)
+        print(f_atl, append(atlas_dir, file_prefix, channel_label(c)), figs_filetype, figs_resolution)
+        close(f_atl)
+    end
 end
     
 disp("Done! ")

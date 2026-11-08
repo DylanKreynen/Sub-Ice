@@ -356,11 +356,11 @@ std_idx = std(redge_idx_filt, 'omitnan');
 z_ridx = (redge_idx_filt-mean_idx)./std_idx; % right edge
 
 % z-score for edge elevation
-mean_elev = mean(lelev); 
-std_elev = std(lelev); 
+mean_elev = mean(lelev, 'omitnan');
+std_elev = std(lelev, 'omitnan');
 z_lelev = (lelev-mean_elev)./std_elev; % left edge
-mean_elev = mean(relev); 
-std_elev = std(relev); 
+mean_elev = mean(relev, 'omitnan');
+std_elev = std(relev, 'omitnan');
 z_relev = (relev-mean_elev)./std_elev; % right edge
 
 % flag outliers (1 = keep, 0 = outlier)

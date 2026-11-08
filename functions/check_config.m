@@ -161,6 +161,15 @@ if m_window > 0 && (any(z_thr_idx > 0) || any(z_thr_elev > 0))
     disp("Warning: both edge smoothing (m_window) and edge outlier filtering (z_thr_idx, z_thr_elev) are switched on. Smoothing is applied first; consider using either, not both. ")
 end
 
+% output directories: end with a separator, so that they can be joined
+% (e.g. results_dir = './output' works the same as './output/')
+cfg_add_sep = @(d) append(d, repmat('/', 1, strlength(d) > 0 && ~endsWith(d, ["/", "\"])));
+results_dir = cfg_add_sep(results_dir);
+proj_subdir = cfg_add_sep(proj_subdir);
+fig_subdir = cfg_add_sep(fig_subdir);
+shp_subdir = cfg_add_sep(shp_subdir);
+tab_subdir = cfg_add_sep(tab_subdir);
+
 % figure output (as used with print())
 figs_filetype = append('-d', char(fig_format));
 figs_resolution = append('-r', num2str(fig_dpi));
@@ -186,4 +195,4 @@ if save_tables
     if ~exist(tab_dir, 'dir'), mkdir(tab_dir), end
 end
 
-clear cfg_defaults cfg_missing cfg_silent cfg_k cfg_edge_methods cfg_knee_methods
+clear cfg_defaults cfg_missing cfg_silent cfg_k cfg_add_sep cfg_edge_methods cfg_knee_methods

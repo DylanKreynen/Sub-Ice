@@ -5,13 +5,12 @@
 %
 %  Settings are grouped by how often you will need to change them:
 %   1. input and output: set for every run
-%   2. centerline search: tune for your DEM and channels
-%   3. profiles and channel edges: defaults as used in the Sub-Ice
-%      publication, adjust to the size of your channels if needed
+%   2. centerline search: tune for your DEM and channels or run ensemble
+%   3. profiles and channel edges: adjust to the size of your channels if needed
 %   4. other settings: rarely changed
-%  See the Sub-Ice publication for details. Settings left out of this file
-%  are set to their default value (with a warning), see
-%  functions/check_config.m.
+%  See the Sub-Ice publication for details and recommendations. Settings 
+%  left out of this file are set to their default value (with a warning), 
+%  see functions/check_config.m.
 %
 %  (c) Dylan Kreynen
 %  University of Oslo
@@ -24,7 +23,7 @@
 
 
 %% 1. INPUT AND OUTPUT
-%  (set for every run)
+%  set for every run
 
 % ice shelf DEM (GeoTIFF, projected coordinates in meters)
 path_to_DEM = './input/venable.tif';    % a single .tif for map_multi_channel.m, a directory of .tifs for map_channel_timeseries.m
@@ -66,7 +65,7 @@ ext_figs = 1;                           % extended figures: cross-sectional prof
 %% 2. CENTERLINE SEARCH
 %  tune for your DEM and channels: the search depends on DEM resolution,
 %  channel size and surface character; if centerlines do not follow the
-%  channel or do not reach the end point, try other values, or ensemble mode
+%  channel or do not reach the end point, try other values or ensemble mode
 
 % single values: map one centerline per channel (and continue with profiles
 % and edges); sets of values for any of search_step, search_angle,
@@ -85,8 +84,8 @@ max_recursions = 10;                    % max. no. of centerline search attempts
 
 
 %% 3. PROFILES AND CHANNEL EDGES
-%  defaults as used in the Sub-Ice publication; adjust prof_length,
-%  min_width and max_width to the size of your channels if needed
+%  adjust to the size of your channels, or experiment with different methods
+%  see Sub-Ice publicatoin for details and recommendations
 
 % channel cross sectional profile parameters
 prof_length   = 8000;                   % length of cross sectional profiles [m]

@@ -255,8 +255,16 @@ end
 % exclude channels, if requested
 keep = true(1, no_channels); 
 if ~isempty(excl_channel_labels)
-    keep = ~ismember(channel_label, excl_channel_labels); 
+    keep = ~ismember(channel_label, excl_channel_labels);
     disp(append("Excluding ", string(sum(~keep)), " channel(s): ", strjoin(channel_label(~keep), ", "), ". "))
+    excl_unknown = setdiff(string(excl_channel_labels), channel_label, 'stable');
+    if ~isempty(excl_unknown)
+        disp(append("Warning: excl_channel_labels contains label(s) that match no channel: ", strjoin(excl_unknown, ", "), ...
+            " (channel labels: ", strjoin(channel_label, ", "), "). "))
+    end
+    if ~any(keep)
+        error("All channels are excluded (excl_channel_labels in the configuration file): nothing to map. ")
+    end
 end
 
 % check start and end points against the DEM: skip channels with points

@@ -143,7 +143,17 @@ elseif start_end_method == 2
     S = shaperead(path_to_start_end_shp); 
     % filter on "shelf" field
     if ~isempty(shelf_filter)
+        if ~isfield(S, 'Shelf')
+            error(append("shelf_filter is set ('", string(shelf_filter), "'), but the start/end point shapefile has no ""Shelf"" attribute ", ...
+                "(attributes: ", strjoin(setdiff(fieldnames(S), ["Geometry", "BoundingBox", "X", "Y"], 'stable'), ", "), "). ", ...
+                "Set shelf_filter = '' in the configuration file to use all points. "))
+        end
+        shelf_values = unique(string({S.Shelf}));
         S = S(strcmp({S.Shelf}, shelf_filter));
+        if isempty(S)
+            error(append("No start/end points with Shelf = '", string(shelf_filter), "' in ", path_to_start_end_shp, ...
+                " (values found: ", strjoin(shelf_values, ", "), "). "))
+        end
     end
     [x_startend, y_startend] =  worldToIntrinsic(R, vertcat(S.X), vertcat(S.Y));
     

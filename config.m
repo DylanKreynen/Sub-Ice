@@ -88,7 +88,7 @@ max_recursions = 10;                    % max. no. of centerline search attempts
 %  see Sub-Ice publication for details and recommendations
 
 % channel cross sectional profile parameters
-prof_length   = 8000;                   % length of cross sectional profiles [m]
+prof_length   = 7000;                   % length of cross sectional profiles [m]
 prof_interval = 250;                    % spacing between profiles along centerline [m] (0 = one profile per centerline search segment)
 
 % channel edge parameters

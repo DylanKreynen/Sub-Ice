@@ -38,7 +38,7 @@ projected coordinates in meters) and channel start and end points.
   - *map_channel_timeseries.m*: map a single channel over different DEMs
   - *run_batch.m*: run either script for a batch of configuration files
   - *config.m*: configuration file with user specifiable variables
-  - *./functions*: collection of custom Matlab functions required to run main scripts
+  - *./functions*: collection of custom MATLAB functions required to run main scripts
   - *./input*: sample [REMA elevation data](https://www.pgc.umn.edu/data/rema/) and shapefiles with channel start/end points
   - *./output*: sample output (will be overwritten when running main scripts)
 

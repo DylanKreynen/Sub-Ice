@@ -85,7 +85,7 @@ max_recursions = 10;                    % max. no. of centerline search attempts
 
 %% 3. PROFILES AND CHANNEL EDGES
 %  adjust to the size of your channels, or experiment with different methods
-%  see Sub-Ice publicatoin for details and recommendations
+%  see Sub-Ice publication for details and recommendations
 
 % channel cross sectional profile parameters
 prof_length   = 8000;                   % length of cross sectional profiles [m]

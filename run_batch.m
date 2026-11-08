@@ -42,7 +42,9 @@ if isempty(config_fns)
 end
 no_config = numel(config_fns);
 if no_config == 0
-    error(append("No configuration files found (", fullfile(config_dir, config_pattern), "). "))
+    error(append("No configuration files found (", fullfile(config_dir, config_pattern), "). ", ...
+        "List your configuration files in config_fns at the top of run_batch.m, or put them in config_dir ", ...
+        "(e.g. copies of config.m named config_shelf_A.m, config_shelf_B.m, ... in ", config_dir, "). "))
 end
 disp(append("Found ", string(no_config), " configuration file(s) to run. "))
 

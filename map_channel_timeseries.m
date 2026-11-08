@@ -264,6 +264,20 @@ if edge_method ~= "SlopeThreshold"
     edge_method_txt = append(edge_method_txt, "-", knee_method);   % (knee point method also used by NearPeaks)
 end
 
+% when one_fig_per_type = 1 and there is more than one date: pre-create a
+% tiled figure for each profile figure type so all dates share one window
+use_combined = ext_figs && one_fig_per_type && no_DEMs > 1;
+if use_combined
+    if plot_across_absh
+        f_absh_all = new_figure([18, 8*no_DEMs], save_figs);
+        tl_absh = tiledlayout(f_absh_all, no_DEMs, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+    end
+    if plot_across_depth
+        f_depth_all = new_figure([18, 8*no_DEMs], save_figs);
+        tl_depth = tiledlayout(f_depth_all, no_DEMs, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+    end
+end
+
 for t = 1:no_DEMs
 
     % read DEM from GeoTIFF, replace no data with NaN
@@ -347,33 +361,62 @@ for t = 1:no_DEMs
     if ext_figs
         prof_dist_vector = ((1:size(profiles{t}, 1)) - (size(profiles{t}, 1)+1)/2)*res;
 
-        f = new_figure([18 10], save_figs);
-        plot_profile_figure(axes(f), prof_dist_vector, profiles{t}, edge_idx{t}, edge_elev{t}, ...
-            'title', date_label(t), ...
-            'subtitle', append("Cross-sectional profiles (", string(size(profiles{t}, 2)), "), looking upstream"), ...
-            'min_width', min_width, 'max_width', max_width)
-        if save_figs
-            print(f, append(fig_dir, file_prefix, date_label(t), '_full_profiles_elev'), figs_filetype, figs_resolution)
-            close(f)
+        if plot_across_absh
+            if use_combined
+                ax = nexttile(tl_absh);
+            else
+                f = new_figure([18 10], save_figs);
+                ax = axes(f);
+            end
+            plot_profile_figure(ax, prof_dist_vector, profiles{t}, edge_idx{t}, edge_elev{t}, ...
+                'title', date_label(t), ...
+                'subtitle', append("Cross-sectional profiles (", string(size(profiles{t}, 2)), "), looking upstream"), ...
+                'min_width', min_width, 'max_width', max_width)
+            if save_figs && ~use_combined
+                print(f, append(fig_dir, file_prefix, date_label(t), '_full_profiles_elev'), figs_filetype, figs_resolution)
+                close(f)
+            end
         end
 
-        f = new_figure([18 10], save_figs);
-        plot_profile_figure(axes(f), prof_dist_vector, profiles{t}, edge_idx{t}, edge_elev{t}, ...
-            'relative', true, 'title', date_label(t), ...
-            'subtitle', append("Cross-sectional profiles between the channel edges, looking upstream; mean depth below left edge: ", ...
-                string(round(mean(T_along{t}.depth_m, 'omitnan'), 1)), " m"), ...
-            'min_width', min_width, 'max_width', max_width)
-        if save_figs
-            print(f, append(fig_dir, file_prefix, date_label(t), '_lim_profiles_depth'), figs_filetype, figs_resolution)
-            close(f)
+        if plot_across_depth
+            if use_combined
+                ax = nexttile(tl_depth);
+            else
+                f = new_figure([18 10], save_figs);
+                ax = axes(f);
+            end
+            plot_profile_figure(ax, prof_dist_vector, profiles{t}, edge_idx{t}, edge_elev{t}, ...
+                'relative', true, 'title', date_label(t), ...
+                'subtitle', append("Cross-sectional profiles between the channel edges, looking upstream; mean depth below left edge: ", ...
+                    string(round(mean(T_along{t}.depth_m, 'omitnan'), 1)), " m"), ...
+                'min_width', min_width, 'max_width', max_width)
+            if save_figs && ~use_combined
+                print(f, append(fig_dir, file_prefix, date_label(t), '_lim_profiles_depth'), figs_filetype, figs_resolution)
+                close(f)
+            end
         end
 
-        f = new_figure([18 13], save_figs);
-        plot_along_channel_figure(f, T_along{t}, date_label(t))
-        if save_figs
-            print(f, append(fig_dir, file_prefix, date_label(t), '_along_channel'), figs_filetype, figs_resolution)
-            close(f)
+        if plot_along_per_channel
+            f = new_figure([18 13], save_figs);
+            plot_along_channel_figure(f, T_along{t}, date_label(t))
+            if save_figs
+                print(f, append(fig_dir, file_prefix, date_label(t), '_along_channel'), figs_filetype, figs_resolution)
+                close(f)
+            end
         end
+    end
+
+    % channel atlas page of this date (always written to fig_dir/atlas/,
+    % without opening a window)
+    if create_channel_atlas
+        f = new_figure([24 17], true);
+        plot_channel_atlas_page(f, DEM, R, x_cent, y_cent, edge_coord, x_prof, y_prof, ...
+            profiles{t}, edge_idx{t}, edge_elev{t}, T_along{t}, date_label(t), ...
+            'subtitle', append(DEM_files{t}, ", edge detection: ", edge_method_txt), ...
+            'clims', map_clims, 'hillshade', map_hillshade, 'transects', plot_prof_transects == 1, ...
+            'bridge_gaps', plot_edge_gaps == 1, 'min_width', min_width, 'max_width', max_width)
+        print(f, append(atlas_dir, file_prefix, date_label(t)), figs_filetype, figs_resolution)
+        close(f)
     end
 
     % keep geometries in map coordinates
@@ -398,6 +441,18 @@ disp(append("Finished mapping all dates. End point reached for ", string(sum(cha
 if any(~channel_status)
     disp(append("Warning: end point not reached for ", strjoin(date_label(~channel_status), ", "), ...
         " (continued with the centerline of the last attempt; check these centerlines, or try other search parameters). "))
+end
+
+% save combined profile figures (produced outside the loop over dates)
+if use_combined && save_figs
+    if plot_across_absh
+        print(f_absh_all, append(fig_dir, file_prefix, 'all_dates_full_profiles_elev'), figs_filetype, figs_resolution)
+        close(f_absh_all)
+    end
+    if plot_across_depth
+        print(f_depth_all, append(fig_dir, file_prefix, 'all_dates_lim_profiles_depth'), figs_filetype, figs_resolution)
+        close(f_depth_all)
+    end
 end
 
 

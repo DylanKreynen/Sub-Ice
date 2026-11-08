@@ -129,6 +129,7 @@ shelf_filter = '';                      % filter start/end point shapefile on "S
 excl_channel_labels = [];               % channel labels to skip, e.g. ["channel-3", "channel-7"] (no exclusion: [])
 
 % extended figures (only relevant when ext_figs = 1)
+% (time series: per date instead of per channel, also for the channel atlas)
 plot_across_absh = 1;                   % plot cross-sectional profiles (absolute heights) Y/N
 plot_across_depth = 1;                  % plot cross-sectional profiles (depth relative to left edge) Y/N
 plot_along_per_channel = 1;             % plot along-channel metrics per channel Y/N

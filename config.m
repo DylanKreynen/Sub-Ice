@@ -94,8 +94,8 @@ prof_interval = 250;                    % spacing between profiles along centerl
 % channel edge parameters
 edge_method = "KneePoint";              % method to use to identify channel edges ("SlopeThreshold", "KneePoint" or "NearPeaks")
 knee_method = "Kneedle";                % kneepoint algorithm to use ("LinearRegression" or "Kneedle", used with edge methods "KneePoint" and "NearPeaks")
-min_width = 1000;                       % minimum channel width [m] (set to 0 for no minimum width; or [left right] min. distance from centerline per side)
-max_width = 8000;                       % maximum channel width [m] (set to 0 for maximum width = prof_length; or [left right] max. distance from centerline per side)
+min_width = 500;                        % minimum channel width [m] (set to 0 for no minimum width; or [left right] min. distance from centerline per side)
+max_width = 6000;                       % maximum channel width [m] (set to 0 for maximum width = prof_length; or [left right] max. distance from centerline per side)
 sg_window = 1000;                       % window size for profile smoothing [m] (will be rounded up to [pix], set to 0 for no smoothing, Savitzky-Golay filter)
 m_window = 0;                           % window size for edge smoothing [-] (no. of profile edges, set to 0 for no smoothing, median filter)
 slope_thr = 0.00;                       % slope threshold for identifying edge [deg] (only used when edge_method = "SlopeThreshold")
@@ -104,9 +104,9 @@ keep_pks = 0;                           % prevent peaks from being adjusted by a
 
 % outlier filtering of edges (based on z-score)
 % note: use either edge smoothing (m_window) or outlier filtering, not both
-z_thr_elev = [1.75 1.75];               % z-score outlier threshold, elevation of edge (set to 0 to skip outlier identification)
+z_thr_elev = [2 2];                     % z-score outlier threshold, elevation of edge (set to 0 to skip outlier identification)
                                         % optional: [left_thr right_thr] to use different thresholds for the left and right edge
-z_thr_idx = [1.75 1.75];                % z-score outlier threshold, profile index of edge (set to 0 to skip outlier identification)
+z_thr_idx = [2 2];                      % z-score outlier threshold, profile index of edge (set to 0 to skip outlier identification)
                                         % optional: [left_thr right_thr] to use different thresholds for the left and right edge
 edge_subst_window = 5;                  % window size for outlier substitution (moving median filter, set to 0 to leave out outliers altogether, default: 5)
 
@@ -131,9 +131,9 @@ excl_channel_labels = [];               % channel labels to skip, e.g. ["channel
 % extended figures (only relevant when ext_figs = 1)
 % (time series: per date instead of per channel, also for the channel atlas)
 plot_across_absh = 1;                   % plot cross-sectional profiles (absolute heights) Y/N
-plot_across_depth = 1;                  % plot cross-sectional profiles (depth relative to left edge) Y/N
-plot_along_per_channel = 1;             % plot along-channel metrics per channel Y/N
-one_fig_per_type = 0;                   % combine per-channel profile figures into one figure with subplots Y/N
+plot_across_depth = 0;                  % plot cross-sectional profiles (depth relative to left edge) Y/N
+plot_along_per_channel = 0;             % plot along-channel metrics per channel Y/N
+one_fig_per_type = 1;                   % combine per-channel profile figures into one figure with subplots Y/N
                                         % (applies to cross-sectional profile figures only)
 create_channel_atlas = 0;               % create a channel atlas: one page per channel (map, profiles, elevation, width and depth
                                         % along the channel), saved to fig_subdir/atlas/ (independent of ext_figs and save_figs) Y/N

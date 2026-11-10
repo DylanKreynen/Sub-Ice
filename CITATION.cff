@@ -22,6 +22,15 @@ authors:
   - family-names: Kreynen
     given-names: Dylan
     affiliation: "Department of Geosciences, University of Oslo, Oslo, Norway"
+  - family-names: Santis
+    given-names: Marcelo
+    affiliation: "Department of Geology, University of Chile, Santiago, Chile"
+  - family-names: Alley
+    given-names: Karen E.
+    affiliation: "Centre for Earth Observation Science, University of Manitoba, Winnipeg, MB, Canada"
+  - family-names: Isaak
+    given-names: Adam
+    affiliation: "Centre for Earth Observation Science, University of Manitoba, Winnipeg, MB, Canada"
 preferred-citation:
   type: article
   status: preprint

@@ -37,6 +37,8 @@ preferred-citation:
   title: "Sub-Ice: semi-automated mapping of basal channels from ice shelf surface elevation data"
   year: 2026
   journal: arXiv
+  doi: "10.48550/arXiv.2611.14219"
+  url: "https://arxiv.org/abs/2611.14219"
   authors:
     - family-names: Kreynen
       given-names: Dylan

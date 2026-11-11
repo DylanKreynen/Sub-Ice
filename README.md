@@ -9,7 +9,7 @@ width, depth and edge elevation are saved as tables, figures and georeferenced s
 For a detailed description of the method, please refer to our preprint on arXiv.org:
 
 > Kreynen D, Alley KE, Santis M, Hock R and Jackson PH (2026) Sub-Ice: semi-automated mapping
-> of basal channels from ice shelf surface elevation data. arXiv preprint, doi: [coming soon]
+> of basal channels from ice shelf surface elevation data. arXiv preprint, doi: [10.48550/arXiv.2611.14219](https://doi.org/10.48550/arXiv.2611.14219)
 
 All settings are explained in the comments of the configuration file (*config.m*).
 
